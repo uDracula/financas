@@ -324,6 +324,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 @media(max-width:768px){
   #mob-sal-card{display:block !important}
 }
+
+/* ── PIN SCREEN ───────────────────────────────────────────────────────── */
+.pin-overlay{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;opacity:0;pointer-events:none;transition:opacity .3s}
+.pin-overlay.visible{opacity:1;pointer-events:all}
+.pin-box{display:flex;flex-direction:column;align-items:center;gap:28px;padding:40px 32px;background:var(--sf);border:.5px solid var(--bd2);border-radius:28px;box-shadow:0 24px 64px rgba(0,0,0,.18);width:320px;max-width:92vw}
+.pin-logo{width:56px;height:56px;background:linear-gradient(145deg,#2563eb,#7c3aed);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.pin-title{font-size:20px;font-weight:700;letter-spacing:-.4px;text-align:center}
+.pin-subtitle{font-size:13px;color:var(--tx2);text-align:center;margin-top:-18px;line-height:1.5}
+.pin-dots{display:flex;gap:14px;justify-content:center}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--sf3);border:.5px solid var(--bd2);transition:all .2s cubic-bezier(.34,1.56,.64,1)}
+.pin-dot.filled{background:var(--bl);border-color:var(--bl);transform:scale(1.15)}
+.pin-dot.error{background:var(--rd);border-color:var(--rd);animation:shake .4s ease}
+.pin-dot.success{background:var(--gn);border-color:var(--gn)}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.pin-btn{height:62px;border:none;background:var(--sf2);border-radius:14px;font-size:22px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--tx);transition:all .14s;border:.5px solid var(--bd2)}
+.pin-btn:hover{background:var(--sf3)}
+.pin-btn:active{transform:scale(.93);background:var(--sf3)}
+.pin-btn.del{font-size:18px;color:var(--tx2)}
+.pin-btn.zero{grid-column:2}
+.pin-attempts{font-size:12px;color:var(--rd);font-weight:600;min-height:18px;text-align:center}
+.pin-forgot{font-size:12px;color:var(--bl);cursor:pointer;background:none;border:none;font-family:var(--font);padding:0;margin-top:-8px}
+.pin-forgot:hover{opacity:.7}
+.lock-btn{width:34px;height:34px;background:var(--sf2);border:.5px solid var(--bd2);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;border:none;transition:all .14s;color:var(--tx2)}
+.lock-btn:hover{background:var(--sf3);color:var(--tx)}
+.pin-setup-step{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--bl);margin-bottom:-16px}
+
 </style>
 </head>
 <body>
@@ -395,7 +422,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
         <button class="mpb" onclick="nextMonth()">›</button>
       </div>
     </div>
-    <div class="tb-r">
+    <div class="tb-r"><button class="lock-btn" onclick="lockApp()" title="Bloquear app">🔒</button>
       <button class="btn-g" onclick="openQuick()">＋ Gasto Rápido</button>
       <button class="btn-p" id="tb-action" onclick="topAction()">＋ Nova Conta</button>
     </div>
@@ -485,6 +512,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
           <div class="set-row"><span>Projeto</span><span id="set-proj-id" style="color:var(--tx3);font-family:var(--mono);font-size:12px">—</span></div>
           <button class="btn-g" style="margin-top:10px;width:100%;justify-content:center" onclick="syncNow()">🔄 Sincronizar agora</button>
           <button class="btn-g" style="margin-top:6px;width:100%;color:var(--rd);justify-content:center" onclick="resetConfig()">🔌 Trocar configuração Firebase</button>
+        </div>
+        
+        <div class="set-crd">
+          <div class="set-ttl">🔐 Segurança</div>
+          <div class="set-row"><span style="color:var(--tx2)">Bloqueio automático</span><span style="color:var(--tx3)">5 min inativo</span></div>
+          <div class="set-row"><span style="color:var(--tx2)">Tentativas erradas</span><span style="color:var(--tx3)">Bloqueia por 1h após 3x</span></div>
+          <button class="btn-g" style="margin-top:10px;width:100%" onclick="changePinFromSettings()">🔑 Alterar PIN</button>
         </div>
         <div class="set-crd">
           <div class="set-ttl">📤 Exportar / Importar Dados</div>
@@ -576,6 +610,40 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
     <div class="inst-prev" id="inst-prev"></div>
     <div class="fg" style="margin-top:6px"><label class="flbl">Observação (opcional)</label><input class="finp" id="pu-note" type="text" placeholder="Detalhes adicionais…"></div>
     <div class="m-foot"><button class="btn-cncl" onclick="closeM('mod-pur')">Cancelar</button><button class="btn-p" onclick="savePurchase()">Adicionar à Fatura</button></div>
+  </div>
+</div>
+
+
+<!-- PIN OVERLAY -->
+<div class="pin-overlay" id="pin-overlay">
+  <div class="pin-box">
+    <div class="pin-logo">💰</div>
+    <div class="pin-setup-step" id="pin-setup-step" style="display:none">Passo 1 de 2</div>
+    <div class="pin-title" id="pin-title">Finanças Pro</div>
+    <div class="pin-subtitle" id="pin-subtitle">Digite seu PIN para acessar</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+      <div class="pin-dot" id="pd4"></div>
+      <div class="pin-dot" id="pd5"></div>
+    </div>
+    <div class="pin-attempts" id="pin-attempts"></div>
+    <div class="pin-grid">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn zero" onclick="pinPress('0')">0</button>
+      <button class="pin-btn del" onclick="pinDel()">⌫</button>
+    </div>
+    <button class="pin-forgot" id="pin-forgot" onclick="pinForgot()">Esqueci o PIN</button>
   </div>
 </div>
 
@@ -720,6 +788,7 @@ function initFirebase(cfg){
         persistToFirebase();
         setSyncState('ok','Dados carregados!');
         updateAll();
+        initPin();
       }
     }, err=>{
       console.warn('Firestore err',err);
@@ -746,6 +815,7 @@ function loadLocalData(){
     DATA.bills=DEFAULT_BILLS;DATA.cards=[];DATA.purchases=[];DATA.salary=0;DATA.paid={};DATA.tx={};
   }
   updateAll();
+  initPin();
 }
 
 async function persistToFirebase(){
@@ -1239,6 +1309,291 @@ function closeM(id){document.getElementById(id).classList.remove('open');}
 function ovC(e,id){if(e.target===e.currentTarget)closeM(id);}
 function emptyH(ico,h,p){return`<div class="empty"><div class="empty-ico">${ico}</div><h3>${h}</h3><p>${p}</p></div>`;}
 
+
+
+// ── PIN SYSTEM ────────────────────────────────────────────────────────
+const PIN_KEY = 'fin_pin_hash';
+const PIN_ATTEMPTS_KEY = 'fin_pin_attempts';
+const PIN_LOCKED_UNTIL_KEY = 'fin_pin_locked_until';
+const PIN_LAST_ACTIVE_KEY = 'fin_pin_last_active';
+const INACTIVITY_MS = 5 * 60 * 1000; // 5 minutos
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_MS = 60 * 60 * 1000; // 1 hora
+
+let pinBuffer = '';
+let pinSetupMode = false;
+let pinSetupFirst = '';
+let pinSetupPhase = 1;
+let inactivityTimer = null;
+let pinUnlockCallback = null;
+
+// Simple hash (não criptografia forte, mas suficiente para uso pessoal)
+async function hashPin(pin) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + 'financas_salt_2026');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function getSavedPin() { return localStorage.getItem(PIN_KEY); }
+function savePinHash(hash) { localStorage.setItem(PIN_KEY, hash); }
+function getAttempts() { return parseInt(localStorage.getItem(PIN_ATTEMPTS_KEY) || '0'); }
+function setAttempts(n) { localStorage.setItem(PIN_ATTEMPTS_KEY, n); }
+function getLockedUntil() { return parseInt(localStorage.getItem(PIN_LOCKED_UNTIL_KEY) || '0'); }
+function setLockedUntil(t) { localStorage.setItem(PIN_LOCKED_UNTIL_KEY, t); }
+function updateLastActive() { localStorage.setItem(PIN_LAST_ACTIVE_KEY, Date.now()); }
+function getLastActive() { return parseInt(localStorage.getItem(PIN_LAST_ACTIVE_KEY) || '0'); }
+
+function showPin(mode = 'unlock') {
+  pinBuffer = '';
+  pinSetupMode = (mode === 'setup');
+  pinSetupPhase = 1;
+  pinSetupFirst = '';
+  updatePinDots();
+  document.getElementById('pin-attempts').textContent = '';
+
+  const locked = getLockedUntil();
+  if (locked > Date.now() && mode === 'unlock') {
+    const mins = Math.ceil((locked - Date.now()) / 60000);
+    document.getElementById('pin-title').textContent = 'App Bloqueado';
+    document.getElementById('pin-subtitle').textContent = `Muitas tentativas erradas. Aguarde ${mins} minuto${mins>1?'s':''}.`;
+    document.getElementById('pin-forgot').style.display = 'block';
+    disablePinBtns(true);
+    // Auto-refresh countdown
+    const interval = setInterval(() => {
+      const remaining = getLockedUntil() - Date.now();
+      if (remaining <= 0) {
+        clearInterval(interval);
+        setAttempts(0);
+        setLockedUntil(0);
+        showPin('unlock');
+      } else {
+        const m = Math.ceil(remaining / 60000);
+        document.getElementById('pin-subtitle').textContent = `Aguarde ${m} minuto${m>1?'s':''}.`;
+      }
+    }, 10000);
+  } else if (mode === 'setup') {
+    document.getElementById('pin-title').textContent = 'Criar PIN';
+    document.getElementById('pin-subtitle').textContent = 'Escolha um PIN de 6 dígitos';
+    document.getElementById('pin-setup-step').style.display = 'block';
+    document.getElementById('pin-setup-step').textContent = 'Passo 1 de 2';
+    document.getElementById('pin-forgot').style.display = 'none';
+    disablePinBtns(false);
+  } else {
+    document.getElementById('pin-title').textContent = 'Finanças Pro';
+    document.getElementById('pin-subtitle').textContent = 'Digite seu PIN para acessar';
+    document.getElementById('pin-setup-step').style.display = 'none';
+    document.getElementById('pin-forgot').style.display = getSavedPin() ? 'block' : 'none';
+    disablePinBtns(false);
+  }
+
+  document.getElementById('pin-overlay').classList.add('visible');
+}
+
+function hidePin() {
+  document.getElementById('pin-overlay').classList.remove('visible');
+  updateLastActive();
+  resetInactivityTimer();
+}
+
+function disablePinBtns(disabled) {
+  document.querySelectorAll('.pin-btn').forEach(b => b.disabled = disabled);
+}
+
+function updatePinDots(state = 'normal') {
+  for (let i = 0; i < 6; i++) {
+    const dot = document.getElementById('pd' + i);
+    dot.className = 'pin-dot';
+    if (state === 'error') dot.classList.add('error');
+    else if (state === 'success') dot.classList.add('success');
+    else if (i < pinBuffer.length) dot.classList.add('filled');
+  }
+}
+
+function pinPress(digit) {
+  if (pinBuffer.length >= 6) return;
+  pinBuffer += digit;
+  updatePinDots();
+  if (pinBuffer.length === 6) {
+    setTimeout(() => handlePinComplete(), 120);
+  }
+}
+
+function pinDel() {
+  if (pinBuffer.length > 0) {
+    pinBuffer = pinBuffer.slice(0, -1);
+    updatePinDots();
+  }
+}
+
+async function handlePinComplete() {
+  if (pinSetupMode) {
+    // Setup flow
+    if (pinSetupPhase === 1) {
+      pinSetupFirst = pinBuffer;
+      pinBuffer = '';
+      updatePinDots('success');
+      setTimeout(() => {
+        updatePinDots();
+        pinSetupPhase = 2;
+        document.getElementById('pin-subtitle').textContent = 'Confirme seu PIN';
+        document.getElementById('pin-setup-step').textContent = 'Passo 2 de 2';
+      }, 400);
+    } else {
+      if (pinBuffer === pinSetupFirst) {
+        // PINs match — save
+        const hash = await hashPin(pinBuffer);
+        savePinHash(hash);
+        setAttempts(0);
+        setLockedUntil(0);
+        updatePinDots('success');
+        document.getElementById('pin-subtitle').textContent = 'PIN criado com sucesso!';
+        document.getElementById('pin-setup-step').style.display = 'none';
+        setTimeout(() => hidePin(), 800);
+        toast('🔐 PIN configurado!');
+      } else {
+        // Mismatch
+        updatePinDots('error');
+        document.getElementById('pin-attempts').textContent = 'PINs diferentes. Tente novamente.';
+        setTimeout(() => {
+          pinBuffer = '';
+          pinSetupFirst = '';
+          pinSetupPhase = 1;
+          updatePinDots();
+          document.getElementById('pin-subtitle').textContent = 'Escolha um PIN de 6 dígitos';
+          document.getElementById('pin-setup-step').textContent = 'Passo 1 de 2';
+          document.getElementById('pin-attempts').textContent = '';
+        }, 900);
+      }
+    }
+  } else {
+    // Unlock flow
+    const savedHash = getSavedPin();
+    if (!savedHash) {
+      // No PIN set yet — first time, go to setup
+      pinBuffer = '';
+      showPin('setup');
+      return;
+    }
+    const inputHash = await hashPin(pinBuffer);
+    if (inputHash === savedHash) {
+      // Correct
+      setAttempts(0);
+      setLockedUntil(0);
+      updatePinDots('success');
+      setTimeout(() => hidePin(), 500);
+    } else {
+      // Wrong
+      updatePinDots('error');
+      const attempts = getAttempts() + 1;
+      setAttempts(attempts);
+      const remaining = MAX_ATTEMPTS - attempts;
+      if (attempts >= MAX_ATTEMPTS) {
+        setLockedUntil(Date.now() + LOCKOUT_MS);
+        document.getElementById('pin-attempts').textContent = 'Bloqueado por 1 hora!';
+        setTimeout(() => showPin('unlock'), 1000);
+      } else {
+        document.getElementById('pin-attempts').textContent = `PIN incorreto. ${remaining} tentativa${remaining>1?'s':''} restante${remaining>1?'s':''}.`;
+        setTimeout(() => {
+          pinBuffer = '';
+          updatePinDots();
+        }, 700);
+      }
+    }
+  }
+}
+
+function lockApp() {
+  updateLastActive(); // reset so it doesn't double-fire
+  document.getElementById('pin-overlay').classList.add('visible');
+  pinBuffer = '';
+  pinSetupMode = false;
+  updatePinDots();
+  document.getElementById('pin-title').textContent = 'Finanças Pro';
+  document.getElementById('pin-subtitle').textContent = 'Digite seu PIN para acessar';
+  document.getElementById('pin-setup-step').style.display = 'none';
+  document.getElementById('pin-forgot').style.display = getSavedPin() ? 'block' : 'none';
+  document.getElementById('pin-attempts').textContent = '';
+  disablePinBtns(false);
+  clearInactivityTimer();
+}
+
+function pinForgot() {
+  customConfirm(
+    'Redefinir PIN apagará o PIN atual. Você precisará criar um novo na próxima vez.',
+    () => {
+      localStorage.removeItem(PIN_KEY);
+      setAttempts(0);
+      setLockedUntil(0);
+      toast('🔓 PIN removido. Crie um novo ao desbloquear.');
+      showPin('setup');
+    },
+    'Redefinir PIN',
+    true
+  );
+}
+
+function resetInactivityTimer() {
+  clearInactivityTimer();
+  inactivityTimer = setTimeout(() => {
+    if (getSavedPin()) {
+      lockApp();
+    }
+  }, INACTIVITY_MS);
+}
+
+function clearInactivityTimer() {
+  if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
+}
+
+// Track user activity to reset inactivity timer
+['click','touchstart','keydown','mousemove','scroll'].forEach(ev => {
+  document.addEventListener(ev, () => {
+    if (!document.getElementById('pin-overlay').classList.contains('visible')) {
+      resetInactivityTimer();
+    }
+  }, { passive: true });
+});
+
+// Keyboard support for PIN
+document.addEventListener('keydown', e => {
+  if (document.getElementById('pin-overlay').classList.contains('visible')) {
+    if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+    else if (e.key === 'Backspace') pinDel();
+  }
+});
+
+function initPin() {
+  const savedPin = getSavedPin();
+  const lockedUntil = getLockedUntil();
+
+  if (!savedPin) {
+    // First time — setup PIN
+    setTimeout(() => showPin('setup'), 800);
+  } else if (lockedUntil > Date.now()) {
+    showPin('unlock');
+  } else {
+    // Check inactivity
+    const lastActive = getLastActive();
+    const inactiveFor = Date.now() - lastActive;
+    if (lastActive === 0 || inactiveFor > INACTIVITY_MS) {
+      showPin('unlock');
+    } else {
+      resetInactivityTimer();
+    }
+  }
+}
+
+// Settings: change PIN button
+function changePinFromSettings() {
+  customConfirm(
+    'Deseja redefinir seu PIN atual?',
+    () => showPin('setup'),
+    'Redefinir',
+    false
+  );
+}
 
 // ── CUSTOM CONFIRM ────────────────────────────
 function customConfirm(msg, onOk, okLabel='Excluir', danger=true){
