@@ -320,6 +320,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
   .bot-nav{display:none}
   .fab{display:none}
 }
+
+@media(max-width:768px){
+  #mob-sal-card{display:block !important}
+}
 </style>
 </head>
 <body>
@@ -400,6 +404,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
   <div class="scroll">
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
+
+      <!-- Salary bar (mobile only) -->
+      <div id="mob-sal-card" style="display:none;background:var(--sf);border:.5px solid var(--bd2);border-radius:var(--r16);padding:14px 16px;margin-bottom:16px;box-shadow:var(--sh1)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+          <span style="font-size:12px;font-weight:600;color:var(--tx2)">Salário Mensal</span>
+          <span style="font-size:18px;font-weight:700;letter-spacing:-.4px;font-family:var(--mono)" id="mob-sal-val">R$ —</span>
+        </div>
+        <div style="height:4px;background:var(--sf3);border-radius:2px;overflow:hidden;margin-bottom:5px">
+          <div style="height:100%;border-radius:2px;transition:width .8s cubic-bezier(.34,1.56,.64,1)" id="mob-sal-fill"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="color:var(--tx3)" id="mob-sal-spent">Gasto: —</span>
+          <span style="font-weight:600" id="mob-sal-free">—</span>
+        </div>
+      </div>
       <div class="sum-grid">
         <div class="sc"><div class="sc-ico" style="background:rgba(37,99,235,.1)">📋</div><div class="sc-lbl">Contas Fixas</div><div class="sc-val" id="ds-bills">R$ 0</div><div class="sc-sub" id="ds-bills-sub">— contas</div></div>
         <div class="sc"><div class="sc-ico" style="background:rgba(22,163,74,.1)">✅</div><div class="sc-lbl">Já Pago</div><div class="sc-val" style="color:var(--gn)" id="ds-paid">R$ 0</div><div class="sc-sub" id="ds-paid-sub">— pagas</div></div>
@@ -562,6 +581,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 
 <div class="toast" id="toast"></div>
 
+<!-- CONFIRM MODAL -->
+<div class="ovl" id="mod-confirm" onclick="">
+  <div class="modal" style="max-width:340px">
+    <div class="m-ttl" id="conf-ttl" style="font-size:16px">Confirmar</div>
+    <p id="conf-msg" style="font-size:13px;color:var(--tx2);line-height:1.65;margin-bottom:0"></p>
+    <div class="m-foot">
+      <button class="btn-cncl" id="conf-cancel" onclick="closeM('mod-confirm')">Cancelar</button>
+      <button class="btn-p" id="conf-ok" style="background:var(--rd)">Excluir</button>
+    </div>
+  </div>
+</div>
+
+
 <!-- FIREBASE SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -637,10 +669,9 @@ window.useLocalMode=function(){
 };
 
 window.resetConfig=function(){
-  if(!confirm('Isso desconectará do Firebase atual. Continuar?'))return;
-  localStorage.removeItem('fb_config');
-  location.reload();
-};
+  customConfirm('Desconectar do Firebase atual?',()=>{
+  localStorage.removeItem('fb_config');location.reload();
+},'Desconectar',true);};
 
 function initFirebase(cfg){
   try{
@@ -863,6 +894,17 @@ function renderDashboard(){
   setT('ds-cards',fmt(cTotal));setT('ds-cards-sub',cards.length+' cartão(ões)');
   setT('ds-free',fmt(free));
   const fEl=document.getElementById('ds-free');if(fEl)fEl.style.color=free<0?'var(--rd)':'var(--gn)';
+
+  // Update mobile salary card
+  const msal=document.getElementById('mob-sal-val');
+  const msf=document.getElementById('mob-sal-fill');
+  const mss=document.getElementById('mob-sal-spent');
+  const msff=document.getElementById('mob-sal-free');
+  if(msal){msal.textContent=sal?fmt(sal):'R$ —';msal.style.color=free<0?'var(--rd)':'inherit';}
+  if(msf){const sp2=bTotal+txTotal+cTotal;const p2=pct(sp2,sal);msf.style.width=p2+'%';msf.style.background=p2>90?'var(--rd)':p2>70?'var(--am)':'var(--gn)';}
+  if(mss)mss.textContent='Gasto: '+fmt(bTotal+txTotal+cTotal);
+  if(msff){const av=sal-(bTotal+txTotal+cTotal);msff.textContent=sal?'Livre: '+fmt(av):'Configure o salário';msff.style.color=av<0?'var(--rd)':'var(--gn)';}
+
   const sorted=[...bills].sort((a,b)=>(a.dueDay||99)-(b.dueDay||99));
   const dbl=document.getElementById('dash-bills-list');
   if(dbl)dbl.innerHTML=sorted.length?`<div class="bills-wrap">${sorted.map(b=>billHTML(b,paid)).join('')}</div>`:emptyH('📋','Sem contas','Adicione sua primeira conta');
@@ -930,7 +972,7 @@ function saveBill(){
   SB(bills);closeM('mod-bill');renderDashboard();renderBillsPage();updateBadge();updateSidebar();
   toast(eid?'✅ Conta atualizada!':'✅ Conta adicionada!');
 }
-function deleteBill(id){if(!confirm('Excluir esta conta?'))return;SB(LB().filter(b=>b.id!==id));SP(LP().filter(p=>p!==id));renderDashboard();renderBillsPage();updateBadge();updateSidebar();toast('🗑 Conta excluída');}
+function deleteBill(id){customConfirm('Excluir esta conta permanentemente?',()=>{SB(LB().filter(b=>b.id!==id));SP(LP().filter(p=>p!==id));renderDashboard();renderBillsPage();updateBadge();updateSidebar();toast('🗑 Conta excluída');});}
 
 // ── CARDS ─────────────────────────────────────
 function renderCardsPage(){
@@ -1054,7 +1096,7 @@ function saveCard(){
   else cards.push({id:'c'+Date.now(),name,lastFour,limit,dueDay,closeDay,grad:pickedGrad});
   SC(cards);closeM('mod-card');renderCardsPage();renderDashboard();toast('✅ Cartão salvo!');
 }
-function delSelCard(){if(!selCardId||!confirm('Excluir cartão e todas as compras?'))return;SC(LC().filter(c=>c.id!==selCardId));SPALL(LPALL().filter(p=>p.cardId!==selCardId));selCardId=null;renderCardsPage();renderDashboard();toast('🗑 Cartão excluído');}
+function delSelCard(){if(!selCardId)return;customConfirm('Excluir cartão e todas as compras parceladas?',()=>{SC(LC().filter(c=>c.id!==selCardId));SPALL(LPALL().filter(p=>p.cardId!==selCardId));selCardId=null;renderCardsPage();renderDashboard();toast('🗑 Cartão excluído');});}
 function openPurModal(){
   if(!selCardId)return;
   document.getElementById('pu-desc').value='';document.getElementById('pu-val').value='';
@@ -1085,7 +1127,7 @@ function savePurchase(){
   const txt=installments>1?` (${installments}× de ${fmt(totalAmount/installments)})`:'';
   toast('✅ Compra adicionada!'+txt);
 }
-function delPur(pid,cardId){if(!confirm('Excluir esta compra de todas as faturas?'))return;SPALL(LPALL().filter(p=>p.id!==pid));const card=LC().find(c=>c.id===cardId);if(card)renderInv(card);renderCardsPage();renderDashboard();toast('🗑 Compra removida');}
+function delPur(pid,cardId){customConfirm('Excluir esta compra de todas as faturas?',()=>{SPALL(LPALL().filter(p=>p.id!==pid));const card=LC().find(c=>c.id===cardId);if(card)renderInv(card);renderCardsPage();renderDashboard();toast('🗑 Compra removida');});}
 
 // ── TRANSACTIONS ──────────────────────────────
 function openQuick(){
@@ -1120,8 +1162,8 @@ function delTx(id){ST(LT().filter(t=>t.id!==id));renderTxPage();renderDashboard(
 
 // ── SETTINGS ──────────────────────────────────
 function saveSalary(){const v=parseFloat(document.getElementById('salary-inp').value)||0;SSal(v);updateAll();toast('✅ Salário salvo!');}
-function clearMonthTx(){if(!confirm('Limpar transações de '+MONTHS[cM]+' '+cY+'?'))return;ST([]);renderDashboard();updateSidebar();toast('🗑 Transações limpas');}
-function clearAll(){if(!confirm('Limpar TODOS os dados? Isso também apagará do Firebase!'))return;DATA={bills:DEFAULT_BILLS,cards:[],purchases:[],salary:0,paid:{},tx:{}};persist();updateAll();toast('🗑 Dados apagados');}
+function clearMonthTx(){customConfirm('Limpar todas as transações de '+MONTHS[cM]+' '+cY+'?',()=>{ST([]);renderDashboard();updateSidebar();toast('🗑 Transações limpas');},  'Limpar',true);}
+function clearAll(){customConfirm('Isso apagará TODOS os dados do Firebase permanentemente. Não pode ser desfeito!',()=>{DATA={bills:DEFAULT_BILLS,cards:[],purchases:[],salary:0,paid:{},tx:{}};persist();updateAll();toast('🗑 Dados apagados');});}
 
 // ── PICKERS ───────────────────────────────────
 function buildEGrid(gid,getFn,setFn){document.getElementById(gid).innerHTML=EMOJIS.map(e=>`<div class="eg ${e===getFn()?'sel':''}" onclick="pickE(event,'${e}','${gid}',${setFn.toString()})">${e}</div>`).join('');}
@@ -1134,6 +1176,16 @@ function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function ovC(e,id){if(e.target===e.currentTarget)closeM(id);}
 function emptyH(ico,h,p){return`<div class="empty"><div class="empty-ico">${ico}</div><h3>${h}</h3><p>${p}</p></div>`;}
+
+
+// ── CUSTOM CONFIRM ────────────────────────────
+function customConfirm(msg, onOk, okLabel='Excluir', danger=true){
+  document.getElementById('conf-msg').textContent=msg;
+  document.getElementById('conf-ok').textContent=okLabel;
+  document.getElementById('conf-ok').style.background=danger?'var(--rd)':'var(--bl)';
+  document.getElementById('conf-ok').onclick=()=>{closeM('mod-confirm');onOk();};
+  openM('mod-confirm');
+}
 
 let toastT;
 function toast(msg){clearTimeout(toastT);const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');toastT=setTimeout(()=>t.classList.remove('show'),2600);}
