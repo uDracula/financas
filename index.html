@@ -355,6 +355,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 </head>
 <body>
 
+
 <!-- SETUP SCREEN (shown until Firebase configured) -->
 <div class="setup-screen" id="setup-screen" style="display:none">
   <div class="setup-box">
@@ -788,7 +789,6 @@ function initFirebase(cfg){
         persistToFirebase();
         setSyncState('ok','Dados carregados!');
         updateAll();
-        initPin();
       }
     }, err=>{
       console.warn('Firestore err',err);
@@ -815,7 +815,6 @@ function loadLocalData(){
     DATA.bills=DEFAULT_BILLS;DATA.cards=[];DATA.purchases=[];DATA.salary=0;DATA.paid={};DATA.tx={};
   }
   updateAll();
-  initPin();
 }
 
 async function persistToFirebase(){
@@ -1566,22 +1565,10 @@ document.addEventListener('keydown', e => {
 
 function initPin() {
   const savedPin = getSavedPin();
-  const lockedUntil = getLockedUntil();
-
   if (!savedPin) {
-    // First time — setup PIN
-    setTimeout(() => showPin('setup'), 800);
-  } else if (lockedUntil > Date.now()) {
-    showPin('unlock');
+    showPin('setup');
   } else {
-    // Check inactivity
-    const lastActive = getLastActive();
-    const inactiveFor = Date.now() - lastActive;
-    if (lastActive === 0 || inactiveFor > INACTIVITY_MS) {
-      showPin('unlock');
-    } else {
-      resetInactivityTimer();
-    }
+    showPin('unlock');
   }
 }
 
@@ -1607,11 +1594,24 @@ function customConfirm(msg, onOk, okLabel='Excluir', danger=true){
 let toastT;
 function toast(msg){clearTimeout(toastT);const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');toastT=setTimeout(()=>t.classList.remove('show'),2600);}
 
+
+
+
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')document.querySelectorAll('.ovl.open').forEach(o=>o.classList.remove('open'));
   if((e.metaKey||e.ctrlKey)&&e.key==='n'){e.preventDefault();openQuick();}
 });
 updMLbl();
+
+// ── INIT PIN — sempre ao carregar a página ──
+(function startPin() {
+  // Usar requestAnimationFrame garante que o DOM do PIN overlay já existe
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      initPin();
+    });
+  });
+})();
 </script>
 </body>
 </html>
