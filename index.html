@@ -803,38 +803,39 @@ window.importData=function(e){
         return;
       }
 
-      // Formato 2: exportado pelo localStorage (chaves fin_bills, fin_cards etc)
-      const bills = raw['fin_bills'] || raw['fin_bills_v2'] || null;
+      // Formato 2: localStorage export
+      // Chaves: fin_salary, fin_bills, fin_cards, fin_purchases, fin_paid_2026_5, fin_tx_2026_5
+      const bills = raw['fin_bills'];
       const cards = raw['fin_cards'] || [];
       const purchases = raw['fin_purchases'] || [];
       const salary = parseFloat(raw['fin_salary']) || 0;
 
-      // Pegar pagamentos e transações de qualquer chave com padrão _YYYY_M
       const paid = {};
       const tx = {};
       for(const [k,v] of Object.entries(raw)){
+        // fin_paid_2026_5 → chave "2026_5"
         if(k.startsWith('fin_paid_')){
-          const parts = k.replace('fin_paid_','').split('_');
-          if(parts.length===2) paid[parts[0]+'_'+parts[1]] = v;
+          const key = k.replace('fin_paid_','');
+          paid[key] = Array.isArray(v) ? v : [];
         }
         if(k.startsWith('fin_tx_')){
-          const parts = k.replace('fin_tx_','').split('_');
-          if(parts.length===2) tx[parts[0]+'_'+parts[1]] = v;
+          const key = k.replace('fin_tx_','');
+          tx[key] = Array.isArray(v) ? v : [];
         }
       }
 
-      // Formato 3: cache do Firebase (chave fin_cache)
-      if(raw['fin_cache'] && raw['fin_cache'].bills){
+      // Formato 3: cache do Firebase
+      if(!bills && raw['fin_cache'] && raw['fin_cache'].bills){
         DATA = raw['fin_cache'];
         persist(); updateAll();
-        toast('✅ Dados importados do cache! ('+DATA.bills.length+' contas)');
+        toast('✅ Importado do cache Firebase! ('+DATA.bills.length+' contas)');
         return;
       }
 
-      if(!bills) throw new Error('Nenhuma conta encontrada no arquivo');
+      if(!bills || !Array.isArray(bills)) throw new Error('Arquivo não contém contas (fin_bills)');
 
       DATA = {
-        bills: Array.isArray(bills) ? bills : DEFAULT_BILLS,
+        bills: bills,
         cards: Array.isArray(cards) ? cards : [],
         purchases: Array.isArray(purchases) ? purchases : [],
         salary: salary,
@@ -842,7 +843,7 @@ window.importData=function(e){
         tx: tx
       };
       persist(); updateAll();
-      toast('✅ Dados importados! ('+DATA.bills.length+' contas)');
+      toast('✅ '+bills.length+' contas, '+cards.length+' cartões importados!');
     }catch(err){
       console.error('Import error:', err, ev.target.result.substring(0,200));
       toast('❌ '+err.message);
