@@ -775,19 +775,9 @@ function initFirebase(cfg){
         DATA.salary=d.salary||0;
         DATA.paid=d.paid||{};
         DATA.tx=d.tx||{};
-        DATA.locked_at=d.locked_at||0;
         setSyncState('ok','Sincronizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
         updateAll();
         localStorage.setItem('fin_cache',JSON.stringify(DATA));
-
-        // ── Detectar lock remoto ──────────────────────────────────────────
-        const remoteLockedAt = d.locked_at || 0;
-        const pinVisible = document.getElementById('pin-overlay').classList.contains('visible');
-        // Só bloqueia se: locked_at > 0, PIN não está já visível, e o sinal é recente (últimos 15s)
-        if (remoteLockedAt > 0 && !pinVisible && remoteLockedAt > (Date.now() - 15000)) {
-          _showPinScreen();
-          toast('🔒 Bloqueado por outro dispositivo');
-        }
       } else {
         // First time: upload defaults
         DATA.bills=DEFAULT_BILLS;
@@ -805,7 +795,27 @@ function initFirebase(cfg){
       loadLocalData();
     });
 
-    // Lock remoto agora detectado dentro do onSnapshot principal
+    // ── Listener dedicado ao documento de controle (lock remoto) ────────────
+    // Usa window._fbImports que já está carregado — documento separado dos dados
+    // para garantir que sync de dados não sobrescreve o sinal de lock
+    {
+      const {doc: docCtrl, onSnapshot: onSnapCtrl, setDoc: setDocCtrl} = window._fbImports;
+      const ctrlRef = docCtrl(db, 'financas', 'controle');
+      // Inicializar documento de controle se não existir
+      setDocCtrl(ctrlRef, { locked_at: 0, v: 0 }, { merge: true });
+      // Escutar mudanças em tempo real
+      onSnapCtrl(ctrlRef, (snap) => {
+        if (!snap.exists()) return;
+        const ctrl = snap.data();
+        const lockedAt = ctrl.locked_at || 0;
+        const pinVisible = document.getElementById('pin-overlay').classList.contains('visible');
+        // Bloqueia se: sinal presente, PIN não visível, sinal recente (20s)
+        if (lockedAt > 0 && !pinVisible && lockedAt > (Date.now() - 20000)) {
+          _showPinScreen();
+          toast('🔒 Bloqueado por outro dispositivo');
+        }
+      });
+    }
   }catch(e){
     console.error('Firebase init failed',e);
     setSyncState('error','Erro ao inicializar Firebase');
@@ -1405,15 +1415,12 @@ function hidePin() {
   document.getElementById('pin-overlay').classList.remove('visible');
   updateLastActive();
   resetInactivityTimer();
-  // Limpar locked_at dos dados para não re-bloquear após sync
-  if (DATA.locked_at) {
-    DATA.locked_at = 0;
-    if (fbMode && db) {
-      try {
-        const {doc: docFn, setDoc: setDocFn} = window._fbImports;
-        setDocFn(docFn(db, 'financas', 'dados'), DATA);
-      } catch(e) {}
-    }
+  // Zera locked_at no documento de controle
+  if (fbMode && db) {
+    try {
+      const {doc: docFn, setDoc: setDocFn} = window._fbImports;
+      setDocFn(docFn(db, 'financas', 'controle'), { locked_at: 0, v: 0 }, { merge: true });
+    } catch(e) {}
   }
 }
 
@@ -1525,20 +1532,20 @@ async function handlePinComplete() {
 }
 
 function lockApp(broadcast = true) {
-  // Mostrar PIN imediatamente na tela atual
   _showPinScreen();
+  clearInactivityTimer();
 
-  // Avisar outros dispositivos salvando locked_at no mesmo doc que já tem onSnapshot
   if (broadcast && fbMode && db) {
     try {
-      // Salva locked_at direto nos dados principais — o onSnapshot nos outros dispositivos vai pegar
-      const ts = Date.now();
-      DATA.locked_at = ts;
+      // Usa setDoc com merge:true para só atualizar locked_at sem tocar nos dados
       const {doc: docFn, setDoc: setDocFn} = window._fbImports;
-      setDocFn(docFn(db, 'financas', 'dados'), DATA);
+      setDocFn(
+        docFn(db, 'financas', 'controle'),
+        { locked_at: Date.now(), v: Math.random() },
+        { merge: true }
+      );
     } catch(e) { console.warn('Lock broadcast failed', e); }
   }
-  clearInactivityTimer();
 }
 
 function _showPinScreen() {
