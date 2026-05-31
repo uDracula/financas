@@ -395,6 +395,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
     <button class="nb" id="nav-cards" onclick="nav('cards')"><div class="nb-ico">💳</div>Cartões de Crédito</button>
     <button class="nb" id="nav-transactions" onclick="nav('transactions')"><div class="nb-ico">💸</div>Transações</button>
     <div class="sb-lbl">Sistema</div>
+    <button class="nb" id="nav-analysis" onclick="nav('analysis')"><div class="nb-ico">🧠</div>Análise Financeira</button>
     <button class="nb" id="nav-settings" onclick="nav('settings')"><div class="nb-ico">⚙️</div>Configurações</button>
   </nav>
   <div class="sb-bot">
@@ -466,7 +467,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 
     <!-- BILLS -->
     <div class="page" id="page-bills">
-      <div class="sec-hd" style="margin-bottom:14px"><span class="sec-ttl">Contas Fixas</span><button class="btn-p" onclick="openBillModal()">＋ Nova Conta</button></div>
+      <div class="sec-hd" style="margin-bottom:14px">
+        <span class="sec-ttl">Contas Fixas — <span id="bills-month-lbl" style="color:var(--bl)"></span></span>
+        <div style="display:flex;gap:8px">
+          <button class="btn-g" onclick="openCopyModal()">📋 Copiar de outro mês</button>
+          <button class="btn-p" onclick="openBillModal()">＋ Nova Conta</button>
+        </div>
+      </div>
       <div class="filter-bar">
         <button class="fb active" onclick="setF('all',this)">Todas</button>
         <button class="fb" onclick="setF('pending',this)">Pendentes</button>
@@ -495,6 +502,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
         </div>
       </div>
       <div id="tx-list"></div>
+    </div>
+
+    <!-- ANALYSIS -->
+    <div class="page" id="page-analysis">
+      <div class="sec-ttl" style="margin-bottom:20px">🧠 Análise Financeira</div>
+      <div id="analysis-content"></div>
     </div>
 
     <!-- SETTINGS -->
@@ -554,6 +567,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
   <button class="bn" id="mnav-bills" onclick="nav('bills')"><span class="bn-ico">📋</span><span class="bn-lbl">Contas</span></button>
   <button class="bn" id="mnav-cards" onclick="nav('cards')"><span class="bn-ico">💳</span><span class="bn-lbl">Cartões</span></button>
   <button class="bn" id="mnav-transactions" onclick="nav('transactions')"><span class="bn-ico">💸</span><span class="bn-lbl">Gastos</span></button>
+  <button class="bn" id="mnav-analysis" onclick="nav('analysis')"><span class="bn-ico">🧠</span><span class="bn-lbl">Análise</span></button>
   <button class="bn" id="mnav-settings" onclick="nav('settings')"><span class="bn-ico">⚙️</span><span class="bn-lbl">Config</span></button>
 </nav>
 <button class="fab" id="fab" onclick="fabAction()">＋</button>
@@ -577,7 +591,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
     <div class="frow"><div class="fg"><label class="flbl">Valor (R$)</label><input class="finp" id="bill-val" type="number" placeholder="0,00" step="0.01" min="0"></div><div class="fg"><label class="flbl">Dia Vencimento</label><input class="finp" id="bill-due" type="number" placeholder="10" min="1" max="31"></div></div>
     <div class="fg"><label class="flbl">Cor</label><div class="swatches" id="bill-swatches"></div></div>
     <div class="fg"><label class="flbl">Observação</label><input class="finp" id="bill-note" type="text" placeholder="Detalhes…"></div>
-    <div class="m-foot"><button class="btn-cncl" onclick="closeM('mod-bill')">Cancelar</button><button class="btn-p" onclick="saveBill()">Salvar</button></div>
+    <div class="fg" style="background:var(--sf2);border:.5px solid var(--bd2);border-radius:10px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:13px;font-weight:600">Só este mês</div><div style="font-size:11px;color:var(--tx3)">Conta não aparece em outros meses</div></div>
+      <label style="position:relative;display:inline-block;width:44px;height:26px;cursor:pointer">
+        <input type="checkbox" id="bill-once" style="opacity:0;width:0;height:0">
+        <span id="bill-once-track" style="position:absolute;inset:0;background:var(--sf3);border-radius:13px;transition:all .2s;border:.5px solid var(--bd2)"></span>
+        <span id="bill-once-thumb" style="position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+      </label>
+    </div>
+    <div class="m-foot">
+      <button class="btn-cncl" id="bill-del-btn" style="display:none;color:var(--rd)" onclick="deleteBillFromModal()">Excluir</button>
+      <button class="btn-cncl" onclick="closeM('mod-bill')">Cancelar</button>
+      <button class="btn-p" onclick="saveBill()">Salvar</button>
+    </div>
   </div>
 </div>
 <div class="ovl" id="mod-card" onclick="ovC(event,'mod-card')">
@@ -645,6 +671,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
       <button class="pin-btn del" onclick="pinDel()">⌫</button>
     </div>
     <button class="pin-forgot" id="pin-forgot" onclick="pinForgot()">Esqueci o PIN</button>
+  </div>
+</div>
+
+
+<!-- MODAL COPIAR CONTAS -->
+<div class="ovl" id="mod-copy" onclick="ovC(event,'mod-copy')">
+  <div class="modal" style="max-width:380px">
+    <div class="m-ttl">📋 Copiar Contas de Outro Mês</div>
+    <p style="font-size:13px;color:var(--tx2);margin-bottom:16px;line-height:1.65">
+      Selecione o mês de origem. Só serão copiadas contas que ainda não existem no mês atual.
+    </p>
+    <div class="fg"><label class="flbl">Mês de Origem</label>
+      <select class="fsel" id="copy-month-sel"></select>
+    </div>
+    <div id="copy-preview" style="background:var(--sf2);border:.5px solid var(--bd2);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--tx2);margin-bottom:4px;min-height:36px;line-height:1.7"></div>
+    <div class="m-foot">
+      <button class="btn-cncl" onclick="closeM('mod-copy')">Cancelar</button>
+      <button class="btn-p" onclick="execCopy()">Copiar</button>
+    </div>
   </div>
 </div>
 
@@ -769,18 +814,29 @@ function initFirebase(cfg){
     onSnap(docRef,(snap)=>{
       if(snap.exists()){
         const d=snap.data();
-        DATA.bills=d.bills||DEFAULT_BILLS;
+        DATA.bills=d.bills||DEFAULT_BILLS; // legado — mantido para migração
+        DATA.month_bills=d.month_bills||{};
         DATA.cards=d.cards||[];
         DATA.purchases=d.purchases||[];
         DATA.salary=d.salary||0;
         DATA.paid=d.paid||{};
         DATA.tx=d.tx||{};
+        // Migração: se tem bills legado e não tem month_bills ainda, migra
+        if(DATA.bills.length && !Object.keys(DATA.month_bills).length){
+          const now=new Date();
+          const k=MK(now.getMonth(),now.getFullYear());
+          DATA.month_bills[k]=DATA.bills;
+          DATA.bills=[];
+          persist();
+        }
         setSyncState('ok','Sincronizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
         updateAll();
         localStorage.setItem('fin_cache',JSON.stringify(DATA));
       } else {
         // First time: upload defaults
-        DATA.bills=DEFAULT_BILLS;
+        const now=new Date();
+        DATA.bills=[];
+        DATA.month_bills={[MK(now.getMonth(),now.getFullYear())]:DEFAULT_BILLS};
         DATA.cards=DEFAULT_CARDS;
         DATA.purchases=DEFAULT_PURCHASES;
         DATA.salary=DEFAULT_SALARY;
@@ -826,12 +882,19 @@ function initFirebase(cfg){
 function loadLocalData(){
   try{
     const cached=JSON.parse(localStorage.getItem('fin_cache')||'{}');
-    DATA.bills=cached.bills||DEFAULT_BILLS;
+    DATA.bills=cached.bills||[];
+    DATA.month_bills=cached.month_bills||{};
     DATA.cards=cached.cards||DEFAULT_CARDS;
     DATA.purchases=cached.purchases||DEFAULT_PURCHASES;
     DATA.salary=cached.salary||DEFAULT_SALARY;
     DATA.paid=cached.paid||{};
     DATA.tx=cached.tx||{};
+    // Migração legado local
+    if(DATA.bills.length && !Object.keys(DATA.month_bills).length){
+      const now=new Date();
+      DATA.month_bills[MK(now.getMonth(),now.getFullYear())]=DATA.bills;
+      DATA.bills=[];
+    }
   }catch{
     DATA.bills=DEFAULT_BILLS;DATA.cards=[];DATA.purchases=[];DATA.salary=0;DATA.paid={};DATA.tx={};
   }
@@ -870,8 +933,19 @@ function setSyncState(state,msg){
 window.syncNow=function(){if(fbMode){setSyncState('syncing','Sincronizando…');setTimeout(()=>setSyncState('ok','Sincronizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})),800);}else toast('ℹ️ Modo local — sem sincronização');};
 
 // ── ACCESSORS ─────────────────────────────────
-const LB=()=>DATA.bills||DEFAULT_BILLS;
-const SB=d=>{DATA.bills=d;persist();};
+// Contas agora são por mês: DATA.month_bills["2026_5"]
+const MK=(m,y)=>`${y}_${m}`;
+const LB=()=>{
+  const k=MK(cM,cY);
+  if(!DATA.month_bills) DATA.month_bills={};
+  // Se não tem contas nesse mês ainda, retorna lista vazia (não copia de outro mês)
+  return DATA.month_bills[k]||[];
+};
+const SB=d=>{
+  if(!DATA.month_bills) DATA.month_bills={};
+  DATA.month_bills[MK(cM,cY)]=d;
+  persist();
+};
 const LP=()=>DATA.paid[`${cY}_${cM}`]||[];
 const SP=d=>{DATA.paid[`${cY}_${cM}`]=d;persist();};
 const LT=()=>DATA.tx[`${cY}_${cM}`]||[];
@@ -882,6 +956,20 @@ const LPALL=()=>DATA.purchases||[];
 const SPALL=d=>{DATA.purchases=d;persist();};
 const LSal=()=>DATA.salary||0;
 const SSal=v=>{DATA.salary=v;persist();};
+
+// Copiar contas de um mês para o atual
+function copyBillsFromMonth(fromM, fromY){
+  if(!DATA.month_bills) DATA.month_bills={};
+  const src=DATA.month_bills[MK(fromM,fromY)]||[];
+  if(!src.length){toast('❌ Mês de origem sem contas');return;}
+  const cur=LB();
+  const existing=new Set(cur.map(b=>b.name.toLowerCase()));
+  const toAdd=src.filter(b=>!existing.has(b.name.toLowerCase())).map(b=>({...b,id:'b'+Date.now()+Math.random().toString(36).slice(2)}));
+  if(!toAdd.length){toast('ℹ️ Todas as contas já existem neste mês');return;}
+  SB([...cur,...toAdd]);
+  updateAll();
+  toast(`✅ ${toAdd.length} conta(s) copiada(s) para ${MONTHS[cM]}!`);
+}
 
 // ── EXPORT / IMPORT ───────────────────────────
 window.exportData=function(){
@@ -992,7 +1080,7 @@ function getCardTotalDebt(cardId){
 function getCardUsedLimit(cardId){return LPALL().filter(p=>p.cardId===cardId).reduce((s,p)=>s+p.totalAmount,0);}
 
 // ── NAV ───────────────────────────────────────
-const PTITLES={dashboard:'Painel',bills:'Contas Fixas',cards:'Cartões de Crédito',transactions:'Transações',settings:'Configurações'};
+const PTITLES={dashboard:'Painel',bills:'Contas Fixas',cards:'Cartões de Crédito',transactions:'Transações',analysis:'Análise Financeira',settings:'Configurações'};
 function nav(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nb,.bn').forEach(b=>b.classList.remove('active'));
@@ -1004,9 +1092,10 @@ function nav(page){
   if(page==='cards'){ta.textContent='＋ Novo Cartão';ta.style.display='flex';}
   else if(page==='settings'){ta.style.display='none';}
   else{ta.textContent='＋ Nova Conta';ta.style.display='flex';}
-  if(page==='bills')renderBillsPage();
+  if(page==='bills'){renderBillsPage();updBillsMonthLbl();}
   if(page==='transactions')renderTxPage();
   if(page==='cards')renderCardsPage();
+  if(page==='analysis')renderAnalysis();
   if(page==='settings')document.getElementById('salary-inp').value=LSal()||'';
 }
 function topAction(){const p=document.querySelector('.page.active')?.id?.replace('page-','');if(p==='cards')openCardModal();else openBillModal();}
@@ -1014,7 +1103,7 @@ function fabAction(){const p=document.querySelector('.page.active')?.id?.replace
 function prevMonth(){cM--;if(cM<0){cM=11;cY--;}updateAll();}
 function nextMonth(){cM++;if(cM>11){cM=0;cY++;}updateAll();}
 function updMLbl(){const el=document.getElementById('mp-lbl');if(el)el.textContent=MONTHS[cM]+' '+cY;}
-function updateAll(){updMLbl();renderDashboard();updateBadge();updateSidebar();const cur=document.querySelector('.page.active')?.id?.replace('page-','');if(cur==='bills')renderBillsPage();if(cur==='transactions')renderTxPage();if(cur==='cards')renderCardsPage();}
+function updateAll(){updMLbl();renderDashboard();updateBadge();updateSidebar();const cur=document.querySelector('.page.active')?.id?.replace('page-','');if(cur==='bills'){renderBillsPage();updBillsMonthLbl();}if(cur==='transactions')renderTxPage();if(cur==='cards')renderCardsPage();if(cur==='analysis')renderAnalysis();}
 
 // ── SIDEBAR ───────────────────────────────────
 function updateSidebar(){
@@ -1072,7 +1161,7 @@ function billHTML(bill,paid){
   return`<div class="bi ${isPaid?'paid':''}" id="bi-${bill.id}">
     <label class="cbx" onclick="event.stopPropagation()"><input type="checkbox" ${isPaid?'checked':''} onchange="togglePaid('${bill.id}',this.checked)"><div class="cbx-box"><svg class="ck" width="10" height="8" viewBox="0 0 10 8"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div></label>
     <div class="bi-ico" style="background:${bill.color}18">${bill.icon}</div>
-    <div class="bi-info"><div class="bi-name">${bill.name}</div><div class="bi-note">${bill.note||'Conta mensal'}</div></div>
+    <div class="bi-info"><div class="bi-name">${bill.name}</div><div class="bi-note">${bill.note||(bill.once?'⚡ Só este mês':'Conta mensal')}</div></div>
     ${dueH}<div class="bi-amt">${fmt(bill.amount)}</div>
     <div class="bi-acts"><button class="ia" onclick="openBillModal('${bill.id}')">✏️</button><button class="ia del" onclick="deleteBill('${bill.id}')">✕</button></div>
   </div>`;
@@ -1107,6 +1196,16 @@ function openBillModal(id=null){
   document.getElementById('bill-val').value=bill?.amount||'';
   document.getElementById('bill-due').value=bill?.dueDay||'';
   document.getElementById('bill-note').value=bill?.note||'';
+  // Campo "só este mês"
+  const onceChk=document.getElementById('bill-once');
+  if(onceChk){
+    onceChk.checked=bill?.once||false;
+    document.getElementById('bill-once-track').style.background=onceChk.checked?'var(--bl)':'var(--sf3)';
+    document.getElementById('bill-once-thumb').style.left=onceChk.checked?'21px':'3px';
+  }
+  // Botão excluir só aparece ao editar
+  const delBtn=document.getElementById('bill-del-btn');
+  if(delBtn) delBtn.style.display=id?'block':'none';
   pickedEmoji=bill?.icon||'📋';pickedColor=bill?.color||'#2563eb';
   buildEGrid('bill-egrid',()=>pickedEmoji,e=>{pickedEmoji=e;});
   buildSW('bill-swatches',COLORS,()=>pickedColor,c=>{pickedColor=c;});
@@ -1117,12 +1216,17 @@ function saveBill(){
   const amount=parseFloat(document.getElementById('bill-val').value);
   const dueDay=parseInt(document.getElementById('bill-due').value)||null;
   const note=document.getElementById('bill-note').value.trim();
+  const once=document.getElementById('bill-once')?.checked||false;
   if(!name||!amount)return;
   const bills=LB();const eid=document.getElementById('bill-eid').value;
-  if(eid){const i=bills.findIndex(b=>b.id===eid);if(i>=0)bills[i]={...bills[i],name,amount,dueDay,note,icon:pickedEmoji,color:pickedColor};}
-  else bills.push({id:'b'+Date.now(),name,amount,dueDay,note,icon:pickedEmoji,color:pickedColor});
+  if(eid){
+    const i=bills.findIndex(b=>b.id===eid);
+    if(i>=0)bills[i]={...bills[i],name,amount,dueDay,note,icon:pickedEmoji,color:pickedColor,once};
+  } else {
+    bills.push({id:'b'+Date.now(),name,amount,dueDay,note,icon:pickedEmoji,color:pickedColor,once});
+  }
   SB(bills);closeM('mod-bill');renderDashboard();renderBillsPage();updateBadge();updateSidebar();
-  toast(eid?'✅ Conta atualizada!':'✅ Conta adicionada!');
+  toast(eid?'✅ Conta atualizada!':'✅ Conta adicionada em '+MONTHS[cM]+'!');
 }
 function deleteBill(id){customConfirm('Excluir esta conta permanentemente?',()=>{SB(LB().filter(b=>b.id!==id));SP(LP().filter(p=>p!==id));renderDashboard();renderBillsPage();updateBadge();updateSidebar();toast('🗑 Conta excluída');});}
 
@@ -1315,7 +1419,7 @@ function delTx(id){ST(LT().filter(t=>t.id!==id));renderTxPage();renderDashboard(
 // ── SETTINGS ──────────────────────────────────
 function saveSalary(){const v=parseFloat(document.getElementById('salary-inp').value)||0;SSal(v);updateAll();toast('✅ Salário salvo!');}
 function clearMonthTx(){customConfirm('Limpar todas as transações de '+MONTHS[cM]+' '+cY+'?',()=>{ST([]);renderDashboard();updateSidebar();toast('🗑 Transações limpas');},  'Limpar',true);}
-function clearAll(){customConfirm('Isso apagará TODOS os dados do Firebase permanentemente. Não pode ser desfeito!',()=>{DATA={bills:DEFAULT_BILLS,cards:DEFAULT_CARDS,purchases:DEFAULT_PURCHASES,salary:DEFAULT_SALARY,paid:{},tx:{}};persist();updateAll();toast('🗑 Dados apagados');});}
+function clearAll(){customConfirm('Isso apagará TODOS os dados do Firebase permanentemente. Não pode ser desfeito!',()=>{DATA={bills:[],month_bills:{},cards:DEFAULT_CARDS,purchases:DEFAULT_PURCHASES,salary:DEFAULT_SALARY,paid:{},tx:{}};persist();updateAll();toast('🗑 Dados apagados');});}
 
 // ── PICKERS ───────────────────────────────────
 function buildEGrid(gid,getFn,setFn){document.getElementById(gid).innerHTML=EMOJIS.map(e=>`<div class="eg ${e===getFn()?'sel':''}" onclick="pickE(event,'${e}','${gid}',${setFn.toString()})">${e}</div>`).join('');}
@@ -1623,6 +1727,209 @@ function changePinFromSettings() {
     'Redefinir',
     false
   );
+}
+
+
+// Toggle visual do switch "só este mês"
+document.addEventListener('change', function(e){
+  if(e.target.id === 'bill-once'){
+    const checked = e.target.checked;
+    document.getElementById('bill-once-track').style.background = checked ? 'var(--bl)' : 'var(--sf3)';
+    document.getElementById('bill-once-thumb').style.left = checked ? '21px' : '3px';
+  }
+});
+
+// ── BILLS POR MÊS — LÓGICA EXTRA ──────────────────────────────────────
+
+function updBillsMonthLbl(){
+  const el=document.getElementById('bills-month-lbl');
+  if(el) el.textContent=MONTHS[cM]+' '+cY;
+}
+
+function openCopyModal(){
+  const sel=document.getElementById('copy-month-sel');
+  if(!sel) return;
+  // Listar meses que têm contas
+  const mb=DATA.month_bills||{};
+  const months=Object.keys(mb).filter(k=>mb[k]&&mb[k].length&&k!==MK(cM,cY));
+  if(!months.length){toast('ℹ️ Nenhum outro mês com contas cadastradas');return;}
+  sel.innerHTML=months.sort().reverse().map(k=>{
+    const [y,m]=k.split('_');
+    return `<option value="${k}">${MONTHS[parseInt(m)]} ${y} (${mb[k].length} contas)</option>`;
+  }).join('');
+  updateCopyPreview();
+  openM('mod-copy');
+}
+
+function updateCopyPreview(){
+  const sel=document.getElementById('copy-month-sel');
+  const prev=document.getElementById('copy-preview');
+  if(!sel||!prev) return;
+  const k=sel.value;
+  if(!k){prev.textContent='';return;}
+  const src=(DATA.month_bills||{})[k]||[];
+  const cur=LB();
+  const existing=new Set(cur.map(b=>b.name.toLowerCase()));
+  const toAdd=src.filter(b=>!existing.has(b.name.toLowerCase()));
+  const skip=src.filter(b=>existing.has(b.name.toLowerCase()));
+  let html=`<strong>${toAdd.length} conta(s) serão copiadas:</strong><br>`;
+  toAdd.forEach(b=>{ html+=`${b.icon} ${b.name} — R$ ${b.amount.toFixed(2).replace('.',',')}<br>`; });
+  if(skip.length) html+=`<br><span style="color:var(--tx3)">${skip.length} já existem e serão ignoradas.</span>`;
+  prev.innerHTML=html;
+}
+
+document.addEventListener('change',function(e){
+  if(e.target.id==='copy-month-sel') updateCopyPreview();
+});
+
+function execCopy(){
+  const sel=document.getElementById('copy-month-sel');
+  if(!sel||!sel.value) return;
+  const [y,m]=sel.value.split('_');
+  copyBillsFromMonth(parseInt(m),parseInt(y));
+  closeM('mod-copy');
+}
+
+function deleteBillFromModal(){
+  const eid=document.getElementById('bill-eid').value;
+  if(!eid) return;
+  customConfirm('Excluir esta conta deste mês?',()=>{
+    SB(LB().filter(b=>b.id!==eid));
+    SP(LP().filter(p=>p!==eid));
+    closeM('mod-bill');
+    renderDashboard();renderBillsPage();updateBadge();updateSidebar();
+    toast('🗑 Conta excluída deste mês');
+  });
+}
+
+// ── ANÁLISE FINANCEIRA ────────────────────────────────────────────────
+function renderAnalysis(){
+  const el=document.getElementById('analysis-content');
+  if(!el) return;
+  const sal=LSal();
+  const bills=LB();
+  const txs=LT();
+  const cards=LC();
+  const paid=LP();
+
+  const bTotal=bills.reduce((s,b)=>s+b.amount,0);
+  const txTotal=txs.reduce((s,t)=>s+t.amount,0);
+  const cTotal=cards.reduce((s,c)=>s+getCardMonthTotal(c.id,cM,cY),0);
+  const totalGasto=bTotal+txTotal+cTotal;
+  const saldo=sal-totalGasto;
+  const pctGasto=sal>0?Math.min(100,Math.round(totalGasto/sal*100)):0;
+  const pctContas=sal>0?Math.round(bTotal/sal*100):0;
+  const pctCartao=sal>0?Math.round(cTotal/sal*100):0;
+
+  // Gerar hints
+  const hints=[];
+
+  if(!sal){
+    hints.push({icon:'⚠️',cor:'var(--am)',titulo:'Configure seu salário',msg:'Sem o salário configurado não consigo fazer análises precisas. Vá em Configurações.'});
+  } else {
+    // Comprometimento geral
+    if(pctGasto>90) hints.push({icon:'🚨',cor:'var(--rd)',titulo:'Orçamento crítico',msg:`Você está comprometendo ${pctGasto}% do salário. Resta apenas ${fmt(saldo)}. Corte gastos urgentemente.`});
+    else if(pctGasto>75) hints.push({icon:'⚠️',cor:'var(--am)',titulo:'Atenção ao orçamento',msg:`${pctGasto}% do salário comprometido. Sobra ${fmt(saldo)}. Evite gastos extras este mês.`});
+    else if(pctGasto<50) hints.push({icon:'🎉',cor:'var(--gn)',titulo:'Finanças saudáveis',msg:`Só ${pctGasto}% comprometido! Você tem ${fmt(saldo)} livres. Ótima hora para guardar mais.`});
+
+    // Contas fixas pesadas
+    if(pctContas>50) hints.push({icon:'🏠',cor:'var(--rd)',titulo:'Contas fixas altas',msg:`Suas contas fixas consomem ${pctContas}% do salário (${fmt(bTotal)}). Avalie se há algo para cortar ou renegociar.`});
+
+    // Cartão pesado
+    if(pctCartao>30) hints.push({icon:'💳',cor:'var(--am)',titulo:'Fatura do cartão alta',msg:`O cartão está em ${fmt(cTotal)} (${pctCartao}% do salário). Cuidado com parcelamentos futuros.`});
+
+    // Dívida total no cartão
+    const cards2=LC();
+    const totalDebt=cards2.reduce((s,c)=>s+getCardTotalDebt(c.id),0);
+    if(totalDebt>sal*3) hints.push({icon:'💸',cor:'var(--rd)',titulo:'Dívida total alta',msg:`Você tem ${fmt(totalDebt)} em parcelamentos no cartão — equivale a ${(totalDebt/sal).toFixed(1)} meses de salário. Evite novas compras parceladas.`});
+    else if(totalDebt>sal) hints.push({icon:'📊',cor:'var(--am)',titulo:'Monitorar parcelamentos',msg:`Dívida total no cartão: ${fmt(totalDebt)}. Fique atento para não acumular mais.`});
+
+    // Reserva
+    const reserva=bills.find(b=>b.name.toLowerCase().includes('reserva')||b.name.toLowerCase().includes('poupan'));
+    if(!reserva) hints.push({icon:'💰',cor:'var(--bl)',titulo:'Sem reserva cadastrada',msg:`Não vejo uma conta de reserva/poupança. Especialistas recomendam guardar pelo menos 10% do salário (${fmt(sal*0.1)}) todo mês.`});
+    else if(reserva.amount<sal*0.1) hints.push({icon:'💰',cor:'var(--bl)',titulo:'Aumente sua reserva',msg:`Você guarda ${fmt(reserva.amount)}/mês. O recomendado é ${fmt(sal*0.1)} (10% do salário). Tente aumentar gradualmente.`});
+    else hints.push({icon:'✅',cor:'var(--gn)',titulo:'Boa reserva mensal',msg:`Parabéns! Você está guardando ${fmt(reserva.amount)}/mês (${Math.round(reserva.amount/sal*100)}% do salário).`});
+
+    // Contas não pagas próximas do vencimento
+    const hoje=new Date();
+    const atrasadas=bills.filter(b=>b.dueDay&&!paid.includes(b.id)&&Math.ceil((new Date(cY,cM,b.dueDay)-hoje)/86400000)<0);
+    const vencendoHoje=bills.filter(b=>b.dueDay&&!paid.includes(b.id)&&Math.ceil((new Date(cY,cM,b.dueDay)-hoje)/86400000)===0);
+    const vencendo3=bills.filter(b=>b.dueDay&&!paid.includes(b.id)&&Math.ceil((new Date(cY,cM,b.dueDay)-hoje)/86400000)>0&&Math.ceil((new Date(cY,cM,b.dueDay)-hoje)/86400000)<=3);
+    if(atrasadas.length) hints.push({icon:'🔴',cor:'var(--rd)',titulo:`${atrasadas.length} conta(s) atrasada(s)`,msg:`Atrasadas: ${atrasadas.map(b=>b.name).join(', ')}. Regularize o quanto antes para evitar juros.`});
+    if(vencendoHoje.length) hints.push({icon:'🔔',cor:'var(--rd)',titulo:'Vence hoje!',msg:`${vencendoHoje.map(b=>b.name).join(', ')} vence(m) hoje. Pague agora!`});
+    if(vencendo3.length) hints.push({icon:'⏰',cor:'var(--am)',titulo:'Vence em até 3 dias',msg:`${vencendo3.map(b=>b.name).join(', ')} vence(m) em breve.`});
+
+    // Sugestão de meta
+    if(saldo>0 && !reserva){
+      hints.push({icon:'🎯',cor:'var(--bl)',titulo:'Sugestão: guarde o excedente',msg:`Você tem ${fmt(saldo)} sobrando. Mesmo sem conta de reserva formal, considere transferir pelo menos ${fmt(saldo*0.5)} para poupança este mês.`});
+    }
+  }
+
+  // Breakdown por categoria
+  const breakdown=[];
+  if(bTotal>0) breakdown.push({label:'Contas Fixas',val:bTotal,cor:'var(--bl)',pct:sal>0?pctContas:0});
+  if(cTotal>0) breakdown.push({label:'Cartão de Crédito',val:cTotal,cor:'var(--pu)',pct:sal>0?pctCartao:0});
+  if(txTotal>0) breakdown.push({label:'Gastos Variáveis',val:txTotal,cor:'var(--am)',pct:sal>0?Math.round(txTotal/sal*100):0});
+  if(saldo>0) breakdown.push({label:'Saldo Livre',val:saldo,cor:'var(--gn)',pct:sal>0?Math.round(saldo/sal*100):0});
+
+  el.innerHTML=`
+    <!-- Resumo do mês -->
+    <div style="background:var(--sf);border:.5px solid var(--bd2);border-radius:var(--r20);padding:18px 20px;margin-bottom:14px;box-shadow:var(--sh1)">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px">📅 ${MONTHS[cM]} ${cY} — Resumo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:var(--sf2);border-radius:12px;padding:12px 14px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--tx3);margin-bottom:3px">Salário</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono)">${fmt(sal)}</div>
+        </div>
+        <div style="background:var(--sf2);border-radius:12px;padding:12px 14px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--tx3);margin-bottom:3px">Total Gasto</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:${pctGasto>80?'var(--rd)':'var(--tx)'}">${fmt(totalGasto)}</div>
+        </div>
+      </div>
+      <!-- Barra de comprometimento -->
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px">
+        <span style="color:var(--tx2);font-weight:600">Comprometimento do salário</span>
+        <span style="font-weight:700;color:${pctGasto>80?'var(--rd)':pctGasto>60?'var(--am)':'var(--gn)'}">${pctGasto}%</span>
+      </div>
+      <div style="height:8px;background:var(--sf3);border-radius:4px;overflow:hidden;margin-bottom:12px">
+        <div style="height:100%;width:${pctGasto}%;border-radius:4px;background:${pctGasto>80?'var(--rd)':pctGasto>60?'var(--am)':'var(--gn)'};transition:width .8s cubic-bezier(.34,1.56,.64,1)"></div>
+      </div>
+      <!-- Breakdown -->
+      ${breakdown.map(b=>`
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+          <span style="color:var(--tx2)">${b.label}</span>
+          <span style="font-weight:600;font-family:var(--mono)">${fmt(b.val)} <span style="color:var(--tx3)">(${b.pct}%)</span></span>
+        </div>
+        <div style="height:4px;background:var(--sf3);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${b.pct}%;background:${b.cor};border-radius:2px"></div>
+        </div>
+      </div>`).join('')}
+    </div>
+
+    <!-- Hints -->
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px">💡 Insights e Alertas</div>
+    ${hints.length ? hints.map(h=>`
+    <div style="background:var(--sf);border:.5px solid var(--bd2);border-radius:var(--r16);padding:15px 16px;margin-bottom:10px;box-shadow:var(--sh1);display:flex;gap:12px;align-items:flex-start">
+      <div style="font-size:22px;flex-shrink:0;line-height:1">${h.icon}</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:${h.cor};margin-bottom:3px">${h.titulo}</div>
+        <div style="font-size:12px;color:var(--tx2);line-height:1.65">${h.msg}</div>
+      </div>
+    </div>`).join('') : '<div style="text-align:center;padding:32px;color:var(--tx3)">✅ Nenhum alerta no momento</div>'}
+
+    <!-- Próximos meses -->
+    <div style="font-size:14px;font-weight:700;margin:16px 0 12px">📆 Faturas futuras do cartão</div>
+    ${LC().length ? LC().map(c=>{
+      const rows=[];
+      for(let i=1;i<=4;i++){
+        const nm=(cM+i)%12; const ny=cY+Math.floor((cM+i)/12);
+        const v=getCardMonthTotal(c.id,nm,ny);
+        if(v>0) rows.push(`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid var(--bd);font-size:12px"><span style="color:var(--tx2)">${MONTHS[nm]} ${ny}</span><span style="font-weight:700;font-family:var(--mono);color:var(--pu)">${fmt(v)}</span></div>`);
+      }
+      return rows.length ? `<div style="background:var(--sf);border:.5px solid var(--bd2);border-radius:var(--r16);padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh1)"><div style="font-size:13px;font-weight:700;margin-bottom:8px">💳 ${c.name} •••• ${c.lastFour||'????'}</div>${rows.join('')}</div>` : '';
+    }).join('') : '<div style="text-align:center;padding:20px;color:var(--tx3);font-size:12px">Nenhum cartão cadastrado</div>'}
+  `;
 }
 
 // ── CUSTOM CONFIRM ────────────────────────────
