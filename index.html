@@ -794,11 +794,59 @@ window.importData=function(e){
   const reader=new FileReader();
   reader.onload=ev=>{
     try{
-      const d=JSON.parse(ev.target.result);
-      if(!d.bills)throw new Error('invalid');
-      DATA=d;persist();updateAll();
-      toast('✅ Dados importados com sucesso!');
-    }catch{toast('❌ Arquivo inválido');}
+      const raw=JSON.parse(ev.target.result);
+
+      // Formato 1: exportado pelo novo app (tem campo bills direto)
+      if(raw.bills && Array.isArray(raw.bills)){
+        DATA=raw; persist(); updateAll();
+        toast('✅ Dados importados! ('+raw.bills.length+' contas)');
+        return;
+      }
+
+      // Formato 2: exportado pelo localStorage (chaves fin_bills, fin_cards etc)
+      const bills = raw['fin_bills'] || raw['fin_bills_v2'] || null;
+      const cards = raw['fin_cards'] || [];
+      const purchases = raw['fin_purchases'] || [];
+      const salary = parseFloat(raw['fin_salary']) || 0;
+
+      // Pegar pagamentos e transações de qualquer chave com padrão _YYYY_M
+      const paid = {};
+      const tx = {};
+      for(const [k,v] of Object.entries(raw)){
+        if(k.startsWith('fin_paid_')){
+          const parts = k.replace('fin_paid_','').split('_');
+          if(parts.length===2) paid[parts[0]+'_'+parts[1]] = v;
+        }
+        if(k.startsWith('fin_tx_')){
+          const parts = k.replace('fin_tx_','').split('_');
+          if(parts.length===2) tx[parts[0]+'_'+parts[1]] = v;
+        }
+      }
+
+      // Formato 3: cache do Firebase (chave fin_cache)
+      if(raw['fin_cache'] && raw['fin_cache'].bills){
+        DATA = raw['fin_cache'];
+        persist(); updateAll();
+        toast('✅ Dados importados do cache! ('+DATA.bills.length+' contas)');
+        return;
+      }
+
+      if(!bills) throw new Error('Nenhuma conta encontrada no arquivo');
+
+      DATA = {
+        bills: Array.isArray(bills) ? bills : DEFAULT_BILLS,
+        cards: Array.isArray(cards) ? cards : [],
+        purchases: Array.isArray(purchases) ? purchases : [],
+        salary: salary,
+        paid: paid,
+        tx: tx
+      };
+      persist(); updateAll();
+      toast('✅ Dados importados! ('+DATA.bills.length+' contas)');
+    }catch(err){
+      console.error('Import error:', err, ev.target.result.substring(0,200));
+      toast('❌ '+err.message);
+    }
   };
   reader.readAsText(file);
   e.target.value='';
