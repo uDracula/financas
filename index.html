@@ -612,17 +612,27 @@ const CAT_E={outros:'🗂',alimentacao:'🍔',transporte:'🚗',saude:'💊',laz
 const CGRADS=['linear-gradient(135deg,#1a1a2e,#16213e)','linear-gradient(135deg,#7c3aed,#5b21b6)','linear-gradient(135deg,#111827,#374151)','linear-gradient(135deg,#1e3c72,#2a5298)','linear-gradient(135deg,#134e4a,#0f766e)','linear-gradient(135deg,#7c2d12,#c2410c)','linear-gradient(135deg,#4c1d95,#6d28d9)','linear-gradient(135deg,#0c4a6e,#0369a1)','linear-gradient(135deg,#14532d,#15803d)','linear-gradient(135deg,#450a0a,#991b1b)'];
 const CGCOLORS=['#16213e','#7c3aed','#374151','#2a5298','#0f766e','#c2410c','#6d28d9','#0369a1','#15803d','#991b1b'];
 const DEFAULT_BILLS=[
-  {id:'b1',name:'Financiamento da Moto',icon:'🏍',color:'#2563eb',amount:500,dueDay:10,note:'Parcela mensal'},
-  {id:'b2',name:'Seguro da Moto',icon:'🛡',color:'#7c3aed',amount:180,dueDay:15,note:'Seguro obrigatório'},
-  {id:'b3',name:'Entretenimento & Namorada',icon:'❤',color:'#dc2626',amount:400,dueDay:null,note:'Lazer e encontros'},
-  {id:'b4',name:'Alimentação & Farmácia',icon:'🛒',color:'#16a34a',amount:800,dueDay:null,note:'Mercado e remédios'},
-  {id:'b5',name:'Gasolina',icon:'⛽',color:'#d97706',amount:300,dueDay:null,note:'Combustível mensal'},
-  {id:'b6',name:'Assinaturas Digitais',icon:'📱',color:'#0891b2',amount:150,dueDay:5,note:'Netflix, Spotify…'},
-  {id:'b7',name:'Celular',icon:'📞',color:'#0284c7',amount:100,dueDay:20,note:'Plano mensal'},
-  {id:'b8',name:'Reserva & Poupança',icon:'🏦',color:'#7c3aed',amount:500,dueDay:1,note:'Economia do mês'},
-  {id:'b9',name:'Energia Elétrica',icon:'⚡',color:'#f59e0b',amount:200,dueDay:12,note:'Conta de luz'},
-  {id:'b10',name:'Internet & TV',icon:'🌐',color:'#ea580c',amount:120,dueDay:8,note:'Plano residencial'},
+  {id:'b1',name:'Financiamento da Moto',icon:'🏍',color:'#0071e3',amount:781,dueDay:10,note:'Parcela mensal'},
+  {id:'b2',name:'Seguro da Moto',icon:'🛡',color:'#5e5ce6',amount:86.02,dueDay:15,note:'Seguro obrigatório'},
+  {id:'b1779036394892',name:'LICENCIAMENTO BOLETO',icon:'📋',color:'#ff6b6b',amount:308,dueDay:5,note:''},
+  {id:'b1779036420014',name:'DEVENDO PIX MARIANA',icon:'📋',color:'#64d2ff',amount:300.37,dueDay:5,note:''},
+  {id:'b1779983571281',name:'emprestimo nubank',icon:'📋',color:'#4ecdc4',amount:215.4,dueDay:5,note:''},
 ];
+const DEFAULT_CARDS=[
+  {id:'c1779029033266',name:'guilherme almeida',lastFour:'8722',limit:6700,dueDay:15,closeDay:22,grad:1},
+];
+const DEFAULT_PURCHASES=[
+  {id:'p1779035894703',cardId:'c1779029033266',desc:'Lentes Plus',totalAmount:552,date:'2026-05-15',installments:6,cat:'saude',note:''},
+  {id:'p1779035954198',cardId:'c1779029033266',desc:'Madeira',totalAmount:1050.27,date:'2026-01-26',installments:10,cat:'casa',note:''},
+  {id:'p1779036063117',cardId:'c1779029033266',desc:'Capanema Moveis',totalAmount:599,date:'2025-08-18',installments:12,cat:'casa',note:''},
+  {id:'p1779036119191',cardId:'c1779029033266',desc:'Pichau Informatica',totalAmount:1396.61,date:'2026-01-31',installments:15,cat:'eletronicos',note:''},
+  {id:'p1779036274686',cardId:'c1779029033266',desc:'iphone 15 pro',totalAmount:1236.96,date:'2025-12-02',installments:12,cat:'eletronicos',note:''},
+  {id:'p1779036314414',cardId:'c1779029033266',desc:'Crocs',totalAmount:697.96,date:'2026-03-27',installments:6,cat:'vestuario',note:''},
+  {id:'p1779924836328',cardId:'c1779029033266',desc:'apple',totalAmount:19.99,date:'2026-05-27',installments:1,cat:'outros',note:''},
+  {id:'p1779924879135',cardId:'c1779029033266',desc:'apple',totalAmount:19.99,date:'2026-05-27',installments:1,cat:'outros',note:''},
+  {id:'p1780181225649',cardId:'c1779029033266',desc:'gasolina',totalAmount:30,date:'2026-05-30',installments:1,cat:'outros',note:''},
+];
+const DEFAULT_SALARY=2587;
 
 // ── STATE ─────────────────────────────────────
 let cM=new Date().getMonth(), cY=new Date().getFullYear();
@@ -703,9 +713,12 @@ function initFirebase(cfg){
       } else {
         // First time: upload defaults
         DATA.bills=DEFAULT_BILLS;
-        DATA.cards=[];DATA.purchases=[];DATA.salary=0;DATA.paid={};DATA.tx={};
+        DATA.cards=DEFAULT_CARDS;
+        DATA.purchases=DEFAULT_PURCHASES;
+        DATA.salary=DEFAULT_SALARY;
+        DATA.paid={};DATA.tx={};
         persistToFirebase();
-        setSyncState('ok','Dados iniciais criados');
+        setSyncState('ok','Dados carregados!');
         updateAll();
       }
     }, err=>{
@@ -724,9 +737,9 @@ function loadLocalData(){
   try{
     const cached=JSON.parse(localStorage.getItem('fin_cache')||'{}');
     DATA.bills=cached.bills||DEFAULT_BILLS;
-    DATA.cards=cached.cards||[];
-    DATA.purchases=cached.purchases||[];
-    DATA.salary=cached.salary||0;
+    DATA.cards=cached.cards||DEFAULT_CARDS;
+    DATA.purchases=cached.purchases||DEFAULT_PURCHASES;
+    DATA.salary=cached.salary||DEFAULT_SALARY;
     DATA.paid=cached.paid||{};
     DATA.tx=cached.tx||{};
   }catch{
@@ -1212,7 +1225,7 @@ function delTx(id){ST(LT().filter(t=>t.id!==id));renderTxPage();renderDashboard(
 // ── SETTINGS ──────────────────────────────────
 function saveSalary(){const v=parseFloat(document.getElementById('salary-inp').value)||0;SSal(v);updateAll();toast('✅ Salário salvo!');}
 function clearMonthTx(){customConfirm('Limpar todas as transações de '+MONTHS[cM]+' '+cY+'?',()=>{ST([]);renderDashboard();updateSidebar();toast('🗑 Transações limpas');},  'Limpar',true);}
-function clearAll(){customConfirm('Isso apagará TODOS os dados do Firebase permanentemente. Não pode ser desfeito!',()=>{DATA={bills:DEFAULT_BILLS,cards:[],purchases:[],salary:0,paid:{},tx:{}};persist();updateAll();toast('🗑 Dados apagados');});}
+function clearAll(){customConfirm('Isso apagará TODOS os dados do Firebase permanentemente. Não pode ser desfeito!',()=>{DATA={bills:DEFAULT_BILLS,cards:DEFAULT_CARDS,purchases:DEFAULT_PURCHASES,salary:DEFAULT_SALARY,paid:{},tx:{}};persist();updateAll();toast('🗑 Dados apagados');});}
 
 // ── PICKERS ───────────────────────────────────
 function buildEGrid(gid,getFn,setFn){document.getElementById(gid).innerHTML=EMOJIS.map(e=>`<div class="eg ${e===getFn()?'sel':''}" onclick="pickE(event,'${e}','${gid}',${setFn.toString()})">${e}</div>`).join('');}
