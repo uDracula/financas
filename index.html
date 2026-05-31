@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finanças">
@@ -328,7 +328,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 /* ── PIN SCREEN ───────────────────────────────────────────────────────── */
 .pin-overlay{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;opacity:0;pointer-events:none;transition:opacity .3s}
 .pin-overlay.visible{opacity:1;pointer-events:all}
-.pin-box{display:flex;flex-direction:column;align-items:center;gap:28px;padding:40px 32px;background:var(--sf);border:.5px solid var(--bd2);border-radius:28px;box-shadow:0 24px 64px rgba(0,0,0,.18);width:320px;max-width:92vw}
+.pin-box{display:flex;flex-direction:column;align-items:center;gap:28px;padding:40px 32px;background:var(--sf);border:.5px solid var(--bd2);border-radius:28px;box-shadow:0 24px 64px rgba(0,0,0,.18);width:320px;max-width:92vw;touch-action:manipulation}
 .pin-logo{width:56px;height:56px;background:linear-gradient(145deg,#2563eb,#7c3aed);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px}
 .pin-title{font-size:20px;font-weight:700;letter-spacing:-.4px;text-align:center}
 .pin-subtitle{font-size:13px;color:var(--tx2);text-align:center;margin-top:-18px;line-height:1.5}
@@ -339,7 +339,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 .pin-dot.success{background:var(--gn);border-color:var(--gn)}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
-.pin-btn{height:62px;border:none;background:var(--sf2);border-radius:14px;font-size:22px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--tx);transition:all .14s;border:.5px solid var(--bd2)}
+.pin-btn{height:62px;border:none;background:var(--sf2);border-radius:14px;font-size:22px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--tx);transition:all .14s;border:.5px solid var(--bd2);touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .pin-btn:hover{background:var(--sf3)}
 .pin-btn:active{transform:scale(.93);background:var(--sf3)}
 .pin-btn.del{font-size:18px;color:var(--tx2)}
@@ -794,6 +794,26 @@ function initFirebase(cfg){
       console.warn('Firestore err',err);
       setSyncState('error','Erro Firebase — usando cache');
       loadLocalData();
+    });
+
+    // ── Listener para lock remoto (cadeado em outro dispositivo) ──────
+    const {doc: docFn2, onSnapshot: onSnap2} = window._fbImports;
+    let lastLockedAt = 0;
+    onSnap2(docFn2(db, 'financas', 'controle'), (snap) => {
+      if (!snap.exists()) return;
+      const d = snap.data();
+      const lockedAt = d.locked_at || 0;
+      // Só bloqueia se o sinal é novo (não o que acabamos de limpar ao desbloquear)
+      if (lockedAt > 0 && lockedAt !== lastLockedAt && lockedAt > (Date.now() - 10000)) {
+        lastLockedAt = lockedAt;
+        const isCurrentlyUnlocked = !document.getElementById('pin-overlay').classList.contains('visible');
+        if (isCurrentlyUnlocked) {
+          lockApp(false); // false = não rebroadcast para evitar loop
+          toast('🔒 App bloqueado remotamente');
+        }
+      } else if (lockedAt === 0) {
+        lastLockedAt = 0;
+      }
     });
   }catch(e){
     console.error('Firebase init failed',e);
@@ -1394,6 +1414,13 @@ function hidePin() {
   document.getElementById('pin-overlay').classList.remove('visible');
   updateLastActive();
   resetInactivityTimer();
+  // Limpar sinal de lock no Firebase após desbloquear
+  if (fbMode && db) {
+    try {
+      const {doc: docFn, setDoc: setDocFn} = window._fbImports;
+      setDocFn(docFn(db, 'financas', 'controle'), { locked_at: 0 });
+    } catch(e) {}
+  }
 }
 
 function disablePinBtns(disabled) {
@@ -1503,8 +1530,18 @@ async function handlePinComplete() {
   }
 }
 
-function lockApp() {
-  updateLastActive(); // reset so it doesn't double-fire
+function lockApp(broadcast = true) {
+  // Se broadcast=true, avisa outros dispositivos via Firebase
+  if (broadcast && fbMode && db) {
+    try {
+      const {doc: docFn, setDoc: setDocFn} = window._fbImports;
+      setDocFn(docFn(db, 'financas', 'controle'), {
+        locked_at: Date.now(),
+        locked_by: navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad') ? 'mobile' : 'desktop'
+      });
+    } catch(e) { console.warn('Lock broadcast failed', e); }
+  }
+
   document.getElementById('pin-overlay').classList.add('visible');
   pinBuffer = '';
   pinSetupMode = false;
