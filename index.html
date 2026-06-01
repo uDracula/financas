@@ -12,6 +12,8 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{overflow-x:hidden;max-width:100vw}
+body{overflow-x:hidden;max-width:100vw}
 :root{
   --bg:#f0f0f5;--sf:#ffffff;--sf2:#f5f5fa;--sf3:#e8e8f0;
   --tx:#18181b;--tx2:#52525b;--tx3:#a1a1aa;
@@ -289,37 +291,181 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 
 /* ── RESPONSIVE (mobile) ──────────────────── */
 @media(max-width:768px){
-  body{flex-direction:column;overflow:auto;height:auto;min-height:100dvh}
+  /* Layout base: coluna, sem overflow horizontal */
+  body{
+    flex-direction:column;
+    overflow-x:hidden;
+    overflow-y:auto;
+    height:100dvh;
+    max-width:100vw;
+  }
   .sb{display:none}
-  .main{height:auto;overflow:visible}
-  .topbar{position:sticky;top:0;z-index:50;padding:0 16px}
+  /* Main ocupa toda a tela em coluna */
+  .main{
+    display:flex;
+    flex-direction:column;
+    height:100dvh;
+    width:100vw;
+    max-width:100vw;
+    overflow:hidden;
+  }
+  /* Topbar compacto */
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    padding:8px 14px;
+    flex-shrink:0;
+    height:auto;
+  }
   .tb-title{font-size:15px}
-  .mp-lbl{min-width:90px;font-size:11px}
-  .scroll{padding:14px 14px 80px;overflow:visible}
-  .sum-grid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
-  .sc{padding:13px 14px}
-  .sc-val{font-size:18px}
-  .tcol{grid-template-columns:1fr;gap:12px}
-  .cards-row{gap:10px}
-  .cc-visual{width:100%;max-width:100%}
-  .cc-add-btn{width:100%}
-  .inv-stats{grid-template-columns:repeat(3,1fr)}
-  .inv-stat span{font-size:13px}
-  .set-wrap{max-width:100%}
-  .modal{border-radius:22px 22px 0 0;position:fixed;bottom:0;left:0;right:0;width:100%;max-width:100%;margin:0;max-height:92vh}
-  .ovl{align-items:flex-end}
-  /* Bottom nav for mobile */
-  .bot-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--sf);border-top:.5px solid var(--bd2);z-index:100;padding-bottom:env(safe-area-inset-bottom,8px)}
-  .bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px;border:none;background:none;cursor:pointer;font-family:var(--font)}
-  .bn-ico{font-size:20px;line-height:1}
-  .bn-lbl{font-size:9px;font-weight:600;color:var(--tx3)}
-  .bn.active .bn-lbl{color:var(--bl)}
+  .mp-lbl{min-width:80px;font-size:10px}
   .tb-r .btn-g{display:none}
-  .fab{position:fixed;bottom:68px;right:16px;width:48px;height:48px;background:var(--bl);border-radius:50%;border:none;cursor:pointer;font-size:22px;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(37,99,235,.35);z-index:90}
+  .tb-r .btn-p{font-size:12px;padding:6px 10px}
+  /* Scroll principal — sem overflow-x */
+  .scroll{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:12px 14px 90px;
+    -webkit-overflow-scrolling:touch;
+    width:100%;
+    max-width:100vw;
+    box-sizing:border-box;
+  }
+  /* Páginas sem overflow */
+  .page{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+  }
+  /* Summary grid 2x2 */
+  .sum-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+  .sc{padding:12px 13px;border-radius:var(--r12)}
+  .sc-ico{width:28px;height:28px;font-size:14px;margin-bottom:6px}
+  .sc-val{font-size:16px}
+  .sc-sub{font-size:10px}
+  /* Layout coluna no dashboard */
+  .tcol{grid-template-columns:1fr;gap:10px}
+  /* Cartões 100% largura */
+  .cards-row{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .cc-visual{width:100%;max-width:100%;height:auto;min-height:130px}
+  .cc-add-btn{width:100%}
+  /* Invoice stats em 3 colunas compactas */
+  .inv-stats{grid-template-columns:repeat(3,1fr)}
+  .inv-stat{padding:9px 6px}
+  .inv-stat span{font-size:12px}
+  .inv-stat label{font-size:8px}
+  /* Fatura tabs compactos */
+  .inv-tabs{margin:10px 12px}
+  .inv-tab{font-size:10px;padding:6px 3px}
+  /* Search na fatura */
+  .inv-search{padding:0 12px 10px}
+  .inv-search input{font-size:13px}
+  /* Compras na fatura */
+  .inv-pur{padding:9px 12px}
+  /* Transações */
+  .tx-wrap{border-radius:var(--r12)}
+  .tx-item{padding:10px 12px}
+  /* Settings */
+  .set-wrap{max-width:100%}
+  .set-crd{padding:14px 15px}
+  /* Seção headers */
+  .sec-hd{flex-wrap:wrap;gap:6px}
+  .sec-hd>div{flex-wrap:wrap;gap:6px}
+  /* Bills */
+  .bills-wrap{border-radius:var(--r12)}
+  .bi{padding:10px 12px}
+  .bi-acts{opacity:1 !important} /* sempre visível no mobile */
+  /* Modais sobem do fundo */
+  .modal{
+    border-radius:22px 22px 0 0;
+    position:fixed;
+    bottom:0;left:0;right:0;
+    width:100%;max-width:100%;
+    margin:0;
+    max-height:92dvh;
+    padding:16px 16px 32px;
+  }
+  .ovl{align-items:flex-end}
+  /* Formulários */
+  .finp,.fsel{font-size:16px !important} /* evita zoom no iOS */
+  /* Bottom nav */
+  .bot-nav{
+    display:flex;
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background:var(--sf);
+    border-top:.5px solid var(--bd2);
+    z-index:100;
+    padding-bottom:env(safe-area-inset-bottom,10px);
+    padding-top:4px;
+  }
+  .bn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    padding:4px 2px;
+    border:none;
+    background:none;
+    cursor:pointer;
+    font-family:var(--font);
+    min-width:0;
+  }
+  .bn-ico{font-size:19px;line-height:1.2}
+  .bn-lbl{font-size:8.5px;font-weight:600;color:var(--tx3);white-space:nowrap}
+  .bn.active .bn-lbl{color:var(--bl)}
+  .bn.active .bn-ico{transform:scale(1.1)}
+  /* FAB */
+  .fab{
+    position:fixed;
+    bottom:70px;
+    right:14px;
+    width:46px;height:46px;
+    background:var(--bl);
+    border-radius:50%;
+    border:none;
+    cursor:pointer;
+    font-size:22px;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 14px rgba(37,99,235,.35);
+    z-index:90;
+  }
+  /* PIN box mobile */
+  .pin-box{padding:28px 20px;width:100%;max-width:360px}
+  .pin-btn{height:56px;font-size:20px}
+  /* Cards row mobile: sem scroll horizontal */
+  .cards-row{overflow-x:hidden}
+  /* Progress cards */
+  .pcrd{padding:13px 14px}
+  /* Header de contas com wrap */
+  #page-bills .sec-hd{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+  }
+  #page-bills .sec-hd>div{width:100%}
+  #page-bills .sec-hd>div button{flex:1}
+  /* Análise */
+  #analysis-content>div{border-radius:var(--r12) !important}
+  /* QR modal no mobile */
+  .qr-modal{padding:16px 14px 32px}
+  .qr-video-wrap{border-radius:12px}
 }
 @media(min-width:769px){
   .bot-nav{display:none}
   .fab{display:none}
+  /* Input padrão no desktop — sem forçar 16px */
+  .finp,.fsel{font-size:14px}
 }
 
 @media(max-width:768px){
@@ -357,7 +503,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 .qr-modal{background:var(--sf);border-radius:22px 22px 0 0;width:100%;max-height:95vh;overflow-y:auto;padding:20px 18px 36px;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1)}
 .ovl.open .qr-modal{transform:translateY(0)}
 .qr-video-wrap{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:1;margin-bottom:14px}
-#qr-video{width:100%;height:100%;object-fit:cover;display:block}
 .qr-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .qr-frame{width:65%;aspect-ratio:1;border:2.5px solid rgba(255,255,255,.9);border-radius:16px;box-shadow:0 0 0 9999px rgba(0,0,0,.45)}
 .qr-corner{position:absolute;width:22px;height:22px;border-color:#fff;border-style:solid}
@@ -375,6 +520,29 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 .qr-result-val{font-weight:700;font-family:var(--mono);text-align:right;max-width:60%;word-break:break-word}
 .btn-scan-again{width:100%;background:var(--sf2);color:var(--tx);border:.5px solid var(--bd2);border-radius:12px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-bottom:8px;display:none}
 
+
+@media(max-width:768px){
+  /* Prevenir overflow horizontal em qualquer elemento */
+  .inv-wrap,.bills-wrap,.tx-wrap,.set-crd,.pcrd,.sc,.sal-crd{
+    max-width:100%;
+    overflow-x:hidden;
+  }
+  /* Tabela de análise */
+  #analysis-content{max-width:100%;overflow-x:hidden}
+  /* Fatura do cartão */
+  .inv-top{padding:14px 14px 0}
+  .lim-bar{padding:11px 14px}
+  .due-banner{margin:10px 14px}
+  /* Texto longo não vaza */
+  .bi-name,.tx-name,.ip-name,.inv-card-name{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:150px;
+  }
+  /* Botões de ação no header de bills */
+  .sec-hd .btn-g,.sec-hd .btn-p{font-size:12px;padding:6px 10px}
+}
 </style>
 </head>
 <body>
@@ -725,7 +893,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
     <div class="modal-handle" style="width:36px;height:4px;background:var(--sf3);border-radius:2px;margin:0 auto 18px"></div>
     <div class="m-ttl" style="margin-bottom:12px">📷 Escanear Nota Fiscal</div>
     <div class="qr-video-wrap" id="qr-video-wrap">
-      <video id="qr-video" autoplay muted playsinline></video>
+      <video id="qr-video" autoplay muted playsinline webkit-playsinline style="width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(1)"></video>
       <canvas id="qr-canvas" style="display:none"></canvas>
       <div class="qr-overlay">
         <div class="qr-frame"></div>
@@ -2038,6 +2206,19 @@ let qrScanned = false;
 
 function openQRScanner() {
   qrScanned = false;
+
+  // Verificar se jsQR carregou
+  if (typeof jsQR === 'undefined') {
+    toast('❌ Biblioteca QR não carregou. Verifique sua conexão.');
+    return;
+  }
+
+  // Verificar suporte à câmera
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast('❌ Câmera não suportada neste navegador.');
+    return;
+  }
+
   document.getElementById('qr-result-card').style.display = 'none';
   document.getElementById('qr-edit-wrap').style.display = 'none';
   document.getElementById('btn-qr-save').style.display = 'none';
@@ -2053,50 +2234,76 @@ function openQRScanner() {
 
   openM('mod-qr');
 
-  // Solicitar câmera traseira
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-  }).then(stream => {
-    qrStream = stream;
-    const video = document.getElementById('qr-video');
-    video.srcObject = stream;
-    video.onloadedmetadata = () => {
-      video.play();
-      document.getElementById('qr-status').textContent = 'Aponte para o QR Code da nota';
+  // Câmera traseira com fallback
+  const constraints = {
+    video: {
+      facingMode: { ideal: 'environment' },
+      width: { ideal: 1280, max: 1920 },
+      height: { ideal: 720, max: 1080 }
+    }
+  };
+
+  navigator.mediaDevices.getUserMedia(constraints)
+    .catch(() => navigator.mediaDevices.getUserMedia({ video: true })) // fallback câmera frontal
+    .then(stream => {
+      qrStream = stream;
+      const video = document.getElementById('qr-video');
+      video.srcObject = stream;
+      video.setAttribute('playsinline', true); // iOS Safari precisa deste atributo
+      video.setAttribute('autoplay', true);
+      video.muted = true;
+      return video.play();
+    })
+    .then(() => {
+      document.getElementById('qr-status').textContent = 'Aponte para o QR Code da nota fiscal';
       startQRLoop();
-    };
-  }).catch(err => {
-    document.getElementById('qr-status').textContent = '❌ Câmera não permitida. Verifique as permissões.';
-    console.error('Camera error:', err);
-  });
+    })
+    .catch(err => {
+      console.error('Camera error:', err);
+      const msg = err.name === 'NotAllowedError'
+        ? '❌ Permissão de câmera negada. Vá nas configurações do Safari e permita.'
+        : err.name === 'NotFoundError'
+        ? '❌ Câmera não encontrada neste dispositivo.'
+        : '❌ Erro ao acessar câmera: ' + err.message;
+      document.getElementById('qr-status').textContent = msg;
+    });
 }
 
 function startQRLoop() {
   const video = document.getElementById('qr-video');
   const canvas = document.getElementById('qr-canvas');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  let frameCount = 0;
+  const statusEl = document.getElementById('qr-status');
 
   function tick() {
     if (qrScanned) return;
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    if (video.readyState >= 2) { // HAVE_CURRENT_DATA ou mais
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      if (typeof jsQR !== 'undefined') {
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert'
-        });
-        if (code && code.data) {
+      try {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        // Tentar leitura normal e invertida
+        let code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+        if (!code) {
+          code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'onlyInvert' });
+        }
+        if (code && code.data && code.data.length > 5) {
           qrScanned = true;
           stopQRStream();
           processQRData(code.data);
           return;
         }
-      } else {
-        document.getElementById('qr-status').textContent = '⚠️ Biblioteca QR não carregada. Verifique a conexão.';
-        return;
+      } catch(e) {
+        console.warn('QR tick error:', e);
+      }
+
+      // Feedback a cada 60 frames (~1s)
+      frameCount++;
+      if (frameCount % 90 === 0) {
+        statusEl.textContent = 'Procurando QR Code… aponte bem para o quadrado';
       }
     }
     qrAnimFrame = requestAnimationFrame(tick);
