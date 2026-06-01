@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Finanças">
 <title>Finanças Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -351,6 +352,29 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 .lock-btn:hover{background:var(--sf3);color:var(--tx)}
 .pin-setup-step{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--bl);margin-bottom:-16px}
 
+
+/* ── QR SCANNER ───────────────────────────────────────────────────────── */
+.qr-modal{background:var(--sf);border-radius:22px 22px 0 0;width:100%;max-height:95vh;overflow-y:auto;padding:20px 18px 36px;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.56,.64,1)}
+.ovl.open .qr-modal{transform:translateY(0)}
+.qr-video-wrap{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:1;margin-bottom:14px}
+#qr-video{width:100%;height:100%;object-fit:cover;display:block}
+.qr-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.qr-frame{width:65%;aspect-ratio:1;border:2.5px solid rgba(255,255,255,.9);border-radius:16px;box-shadow:0 0 0 9999px rgba(0,0,0,.45)}
+.qr-corner{position:absolute;width:22px;height:22px;border-color:#fff;border-style:solid}
+.qr-corner.tl{top:17.5%;left:17.5%;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.qr-corner.tr{top:17.5%;right:17.5%;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.qr-corner.bl{bottom:17.5%;left:17.5%;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.qr-corner.br{bottom:17.5%;right:17.5%;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.qr-scan-line{position:absolute;left:17.5%;right:17.5%;height:2px;background:linear-gradient(90deg,transparent,#0071e3,transparent);animation:scanLine 2s ease-in-out infinite}
+@keyframes scanLine{0%{top:17.5%}50%{top:82.5%}100%{top:17.5%}}
+.qr-status{text-align:center;font-size:13px;color:var(--tx2);padding:6px 0;min-height:22px;font-weight:500}
+.qr-result-card{background:var(--sf2);border:.5px solid var(--bd2);border-radius:var(--r16);padding:16px;margin-bottom:14px;display:none}
+.qr-result-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:.5px solid var(--bd);font-size:13px}
+.qr-result-row:last-child{border-bottom:none}
+.qr-result-lbl{color:var(--tx2);font-weight:500}
+.qr-result-val{font-weight:700;font-family:var(--mono);text-align:right;max-width:60%;word-break:break-word}
+.btn-scan-again{width:100%;background:var(--sf2);color:var(--tx);border:.5px solid var(--bd2);border-radius:12px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);margin-bottom:8px;display:none}
+
 </style>
 </head>
 <body>
@@ -424,7 +448,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
         <button class="mpb" onclick="nextMonth()">›</button>
       </div>
     </div>
-    <div class="tb-r"><button class="lock-btn" onclick="lockApp()" title="Bloquear app">🔒</button>
+    <div class="tb-r"><button class="lock-btn" onclick="lockApp()" title="Bloquear app">🔒</button><button class="btn-g" id="btn-qr-topbar" onclick="openQRScanner()" style="display:none" title="Escanear nota fiscal">📷 Escanear Nota</button>
       <button class="btn-g" onclick="openQuick()">＋ Gasto Rápido</button>
       <button class="btn-p" id="tb-action" onclick="topAction()">＋ Nova Conta</button>
     </div>
@@ -496,8 +520,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
     <div class="page" id="page-transactions">
       <div class="sec-hd" style="margin-bottom:14px">
         <span class="sec-ttl">Transações</span>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select class="fsel" id="tx-flt" style="width:180px;padding:7px 11px;font-size:12px;border-radius:9px" onchange="renderTxPage()"><option value="">Todas as contas</option></select>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="fsel" id="tx-flt" style="width:160px;padding:7px 11px;font-size:12px;border-radius:9px" onchange="renderTxPage()"><option value="">Todas as contas</option></select>
+          <button class="btn-g" onclick="openQRScanner()" title="Escanear nota fiscal">📷 Nota</button>
           <button class="btn-p" onclick="openQuick()">＋ Adicionar</button>
         </div>
       </div>
@@ -689,6 +714,53 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
     <div class="m-foot">
       <button class="btn-cncl" onclick="closeM('mod-copy')">Cancelar</button>
       <button class="btn-p" onclick="execCopy()">Copiar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL QR SCANNER -->
+<div class="ovl" id="mod-qr" onclick="ovC(event,'mod-qr')">
+  <div class="qr-modal">
+    <div class="modal-handle" style="width:36px;height:4px;background:var(--sf3);border-radius:2px;margin:0 auto 18px"></div>
+    <div class="m-ttl" style="margin-bottom:12px">📷 Escanear Nota Fiscal</div>
+    <div class="qr-video-wrap" id="qr-video-wrap">
+      <video id="qr-video" autoplay muted playsinline></video>
+      <canvas id="qr-canvas" style="display:none"></canvas>
+      <div class="qr-overlay">
+        <div class="qr-frame"></div>
+        <div class="qr-corner tl"></div>
+        <div class="qr-corner tr"></div>
+        <div class="qr-corner bl"></div>
+        <div class="qr-corner br"></div>
+        <div class="qr-scan-line" id="qr-scan-line"></div>
+      </div>
+    </div>
+    <div class="qr-status" id="qr-status">Aponte para o QR Code da nota fiscal</div>
+
+    <!-- Resultado extraído do QR -->
+    <div class="qr-result-card" id="qr-result-card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--gn)">✅ Nota Lida com Sucesso!</div>
+      <div class="qr-result-row"><span class="qr-result-lbl">Estabelecimento</span><span class="qr-result-val" id="qr-r-nome">—</span></div>
+      <div class="qr-result-row"><span class="qr-result-lbl">Valor Total</span><span class="qr-result-val" id="qr-r-valor" style="color:var(--rd)">—</span></div>
+      <div class="qr-result-row"><span class="qr-result-lbl">Data</span><span class="qr-result-val" id="qr-r-data">—</span></div>
+      <div class="qr-result-row" id="qr-r-cnpj-row"><span class="qr-result-lbl">CNPJ</span><span class="qr-result-val" id="qr-r-cnpj" style="font-size:11px">—</span></div>
+    </div>
+
+    <!-- Campo editar antes de salvar -->
+    <div id="qr-edit-wrap" style="display:none">
+      <div class="fg"><label class="flbl">Descrição</label><input class="finp" id="qr-desc" type="text" placeholder="Ex: Farmácia, Mercado…"></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Valor (R$)</label><input class="finp" id="qr-val" type="number" step="0.01" min="0"></div>
+        <div class="fg"><label class="flbl">Data</label><input class="finp" id="qr-date" type="date"></div>
+      </div>
+      <div class="fg"><label class="flbl">Categoria</label><select class="fsel" id="qr-cat-sel"></select></div>
+    </div>
+
+    <button class="btn-scan-again" id="btn-scan-again" onclick="restartQR()">🔄 Escanear Outra Nota</button>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-cncl" onclick="closeQR()">Cancelar</button>
+      <button class="btn-p" id="btn-qr-save" style="display:none;flex:2;justify-content:center" onclick="saveQRTransaction()">💾 Salvar Gasto</button>
     </div>
   </div>
 </div>
@@ -1096,10 +1168,36 @@ function nav(page){
   if(page==='transactions')renderTxPage();
   if(page==='cards')renderCardsPage();
   if(page==='analysis')renderAnalysis();
+  // Mostrar botão QR só na aba de transações (desktop)
+  const qrBtn=document.getElementById('btn-qr-topbar');
+  if(qrBtn) qrBtn.style.display=page==='transactions'?'flex':'none';
   if(page==='settings')document.getElementById('salary-inp').value=LSal()||'';
 }
 function topAction(){const p=document.querySelector('.page.active')?.id?.replace('page-','');if(p==='cards')openCardModal();else openBillModal();}
-function fabAction(){const p=document.querySelector('.page.active')?.id?.replace('page-','');if(p==='cards')openCardModal();else if(p==='transactions')openQuick();else openBillModal();}
+function fabAction(){const p=document.querySelector('.page.active')?.id?.replace('page-','');if(p==='cards')openCardModal();else if(p==='transactions')openFabTxMenu();else openBillModal();}
+
+function openFabTxMenu(){
+  // No mobile, mostrar opções: gasto rápido ou escanear nota
+  customConfirm(
+    'Como deseja adicionar o gasto?',
+    ()=>openQRScanner(),
+    '📷 Escanear Nota Fiscal',
+    false
+  );
+  // Hack: trocar o botão cancelar para abrir gasto rápido
+  setTimeout(()=>{
+    const cancelBtn=document.getElementById('conf-cancel');
+    if(cancelBtn){
+      cancelBtn.textContent='✍️ Digitar Manualmente';
+      cancelBtn.onclick=()=>{closeM('mod-confirm');openQuick();};
+    }
+    // Trocar título
+    const ttl=document.getElementById('conf-ttl');
+    if(ttl) ttl.textContent='Adicionar Gasto';
+    const msg=document.getElementById('conf-msg');
+    if(msg) msg.textContent='Aponte a câmera para o QR Code da nota fiscal ou digite manualmente.';
+  },50);
+}
 function prevMonth(){cM--;if(cM<0){cM=11;cY--;}updateAll();}
 function nextMonth(){cM++;if(cM>11){cM=0;cY++;}updateAll();}
 function updMLbl(){const el=document.getElementById('mp-lbl');if(el)el.textContent=MONTHS[cM]+' '+cY;}
@@ -1930,6 +2028,243 @@ function renderAnalysis(){
       return rows.length ? `<div style="background:var(--sf);border:.5px solid var(--bd2);border-radius:var(--r16);padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh1)"><div style="font-size:13px;font-weight:700;margin-bottom:8px">💳 ${c.name} •••• ${c.lastFour||'????'}</div>${rows.join('')}</div>` : '';
     }).join('') : '<div style="text-align:center;padding:20px;color:var(--tx3);font-size:12px">Nenhum cartão cadastrado</div>'}
   `;
+}
+
+
+// ── QR SCANNER ────────────────────────────────────────────────────────────
+let qrStream = null;
+let qrAnimFrame = null;
+let qrScanned = false;
+
+function openQRScanner() {
+  qrScanned = false;
+  document.getElementById('qr-result-card').style.display = 'none';
+  document.getElementById('qr-edit-wrap').style.display = 'none';
+  document.getElementById('btn-qr-save').style.display = 'none';
+  document.getElementById('btn-scan-again').style.display = 'none';
+  document.getElementById('qr-status').textContent = 'Iniciando câmera…';
+  document.getElementById('qr-scan-line').style.display = 'block';
+
+  // Preencher categorias
+  const bills = LB();
+  document.getElementById('qr-cat-sel').innerHTML =
+    '<option value="">🗂 Outros</option>' +
+    bills.map(b => `<option value="${b.id}">${b.icon} ${b.name}</option>`).join('');
+
+  openM('mod-qr');
+
+  // Solicitar câmera traseira
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+  }).then(stream => {
+    qrStream = stream;
+    const video = document.getElementById('qr-video');
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      video.play();
+      document.getElementById('qr-status').textContent = 'Aponte para o QR Code da nota';
+      startQRLoop();
+    };
+  }).catch(err => {
+    document.getElementById('qr-status').textContent = '❌ Câmera não permitida. Verifique as permissões.';
+    console.error('Camera error:', err);
+  });
+}
+
+function startQRLoop() {
+  const video = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function tick() {
+    if (qrScanned) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      if (typeof jsQR !== 'undefined') {
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert'
+        });
+        if (code && code.data) {
+          qrScanned = true;
+          stopQRStream();
+          processQRData(code.data);
+          return;
+        }
+      } else {
+        document.getElementById('qr-status').textContent = '⚠️ Biblioteca QR não carregada. Verifique a conexão.';
+        return;
+      }
+    }
+    qrAnimFrame = requestAnimationFrame(tick);
+  }
+  qrAnimFrame = requestAnimationFrame(tick);
+}
+
+function stopQRStream() {
+  if (qrAnimFrame) { cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
+  if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+  document.getElementById('qr-scan-line').style.display = 'none';
+}
+
+function closeQR() {
+  stopQRStream();
+  closeM('mod-qr');
+}
+
+function restartQR() {
+  qrScanned = false;
+  document.getElementById('qr-result-card').style.display = 'none';
+  document.getElementById('qr-edit-wrap').style.display = 'none';
+  document.getElementById('btn-qr-save').style.display = 'none';
+  document.getElementById('btn-scan-again').style.display = 'none';
+  document.getElementById('qr-scan-line').style.display = 'block';
+  document.getElementById('qr-status').textContent = 'Iniciando câmera…';
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' } }
+  }).then(stream => {
+    qrStream = stream;
+    const video = document.getElementById('qr-video');
+    video.srcObject = stream;
+    video.play();
+    document.getElementById('qr-status').textContent = 'Aponte para o QR Code da nota';
+    startQRLoop();
+  }).catch(() => {
+    document.getElementById('qr-status').textContent = '❌ Câmera não disponível.';
+  });
+}
+
+// ── PROCESSAR URL/DADOS DO QR DA NF-e ─────────────────────────────────────
+// O QR da NF-e contém uma URL com parâmetros como:
+// chNFe (chave), nNF (número NF), vNF (valor), dhEmi (data), cDest (CNPJ destino)
+// Alguns estados incluem direto na URL: ?vNF=120.50&dhEmi=20240601...
+// Outros só têm a chave — extraímos o que conseguirmos da URL
+function processQRData(rawData) {
+  document.getElementById('qr-status').textContent = '✅ QR Code lido! Extraindo dados…';
+
+  let nome = '';
+  let valor = '';
+  let data = '';
+  let cnpj = '';
+  let found = false;
+
+  try {
+    // Tentar parsear como URL
+    let url;
+    try { url = new URL(rawData); } catch(e) { url = null; }
+
+    if (url) {
+      const params = url.searchParams;
+
+      // Valor NF
+      const vNF = params.get('vNF') || params.get('v') || '';
+      if (vNF) { valor = parseFloat(vNF).toFixed(2); found = true; }
+
+      // Data de emissão
+      const dhEmi = params.get('dhEmi') || params.get('d') || '';
+      if (dhEmi) {
+        // Formato pode ser ISO ou AAAAMMDD
+        try {
+          const dStr = dhEmi.replace(/[TZ]/g,'').substring(0,8);
+          if (dStr.length === 8) {
+            data = `${dStr.substring(0,4)}-${dStr.substring(4,6)}-${dStr.substring(6,8)}`;
+          } else {
+            data = new Date(dhEmi).toISOString().split('T')[0];
+          }
+        } catch(e) { data = new Date().toISOString().split('T')[0]; }
+        found = true;
+      }
+
+      // CNPJ do emitente — geralmente nos primeiros 14 dígitos da chave NF-e
+      const chNFe = params.get('chNFe') || params.get('c') || '';
+      if (chNFe && chNFe.length >= 14) {
+        // Chave NF-e: cUF(2)+AAMM(4)+CNPJ(14)+...
+        const rawCNPJ = chNFe.substring(6, 20);
+        cnpj = rawCNPJ.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+        found = true;
+      }
+
+      // Tentar extrair nome do host da URL (nome do estado/sefaz)
+      if (url.hostname) {
+        const host = url.hostname;
+        if (host.includes('nfce')) nome = 'NFC-e';
+        else if (host.includes('sefaz')) nome = 'Nota Fiscal';
+        else nome = 'Nota Fiscal';
+      }
+
+      // Algumas URLs incluem o CNPJ como parâmetro separado
+      const cnpjParam = params.get('cnpj') || params.get('CNPJ') || '';
+      if (cnpjParam) {
+        cnpj = cnpjParam.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+      }
+
+    } else {
+      // Não é URL — pode ser texto com dados
+      // Tentar extrair valor com regex: R$ 00,00 ou total: 00,00
+      const valorMatch = rawData.match(/(?:total|valor|vl|R\$)\s*:?\s*(\d+[.,]\d{2})/i);
+      if (valorMatch) {
+        valor = parseFloat(valorMatch[1].replace(',', '.')).toFixed(2);
+        found = true;
+      }
+      // Extrair CNPJ com regex
+      const cnpjMatch = rawData.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/);
+      if (cnpjMatch) { cnpj = cnpjMatch[0]; found = true; }
+      nome = 'Nota Fiscal';
+      data = new Date().toISOString().split('T')[0];
+    }
+  } catch(e) {
+    console.warn('QR parse error:', e);
+  }
+
+  if (!data) data = new Date().toISOString().split('T')[0];
+  if (!nome) nome = 'Compra';
+
+  // Mostrar resultado
+  document.getElementById('qr-r-nome').textContent = nome || '—';
+  document.getElementById('qr-r-valor').textContent = valor ? 'R$ ' + parseFloat(valor).toLocaleString('pt-BR', {minimumFractionDigits:2}) : 'Não encontrado';
+  document.getElementById('qr-r-data').textContent = data ? new Date(data + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  document.getElementById('qr-r-cnpj').textContent = cnpj || '—';
+  document.getElementById('qr-result-card').style.display = 'block';
+
+  // Preencher campos editáveis
+  document.getElementById('qr-desc').value = nome;
+  document.getElementById('qr-val').value = valor || '';
+  document.getElementById('qr-date').value = data;
+  document.getElementById('qr-edit-wrap').style.display = 'block';
+  document.getElementById('btn-qr-save').style.display = 'flex';
+  document.getElementById('btn-scan-again').style.display = 'block';
+
+  if (!found || !valor) {
+    document.getElementById('qr-status').textContent = '⚠️ Dados parciais extraídos — verifique e complete.';
+  } else {
+    document.getElementById('qr-status').textContent = '✅ Dados extraídos! Confirme e salve.';
+  }
+}
+
+function saveQRTransaction() {
+  const desc = document.getElementById('qr-desc').value.trim();
+  const amount = parseFloat(document.getElementById('qr-val').value);
+  const date = document.getElementById('qr-date').value;
+  const catId = document.getElementById('qr-cat-sel').value;
+
+  if (!desc || !amount || !date) {
+    toast('⚠️ Preencha descrição e valor');
+    return;
+  }
+
+  const txs = LT();
+  txs.push({ id: 't' + Date.now(), desc, amount, date, catId });
+  ST(txs);
+  closeQR();
+  renderDashboard();
+  updateSidebar();
+  const cur = document.querySelector('.page.active')?.id?.replace('page-','');
+  if (cur === 'transactions') renderTxPage();
+  toast('✅ Gasto de ' + fmt(amount) + ' salvo!');
 }
 
 // ── CUSTOM CONFIRM ────────────────────────────
