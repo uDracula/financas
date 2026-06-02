@@ -351,6 +351,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 .lock-btn:hover{background:var(--sf3);color:var(--tx)}
 .pin-setup-step{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--bl);margin-bottom:-16px}
 
+
+/* ── CATEGORY GRID ────────────────────────────────────────────────────── */
+.cat-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:10px 6px;border-radius:12px;cursor:pointer;
+  border:1.5px solid var(--bd2);background:var(--sf2);
+  font-family:var(--font);transition:all .15s;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.cat-btn:hover{background:var(--sf3);border-color:var(--bl)}
+.cat-btn.active{background:rgba(37,99,235,.12);border-color:var(--bl);color:var(--bl)}
+.cat-btn span:first-child{font-size:22px;line-height:1}
+.cat-btn span:last-child{font-size:9px;font-weight:700;text-align:center;line-height:1.2;color:inherit}
 </style>
 </head>
 <body>
@@ -575,11 +588,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 <!-- MODALS -->
 <div class="ovl" id="mod-quick" onclick="ovC(event,'mod-quick')">
   <div class="modal">
-    <div class="m-ttl">Adicionar Gasto</div>
-    <div class="fg"><label class="flbl">Descrição</label><input class="finp" id="qa-desc" type="text" placeholder="Almoço, Gasolina…" autocomplete="off"></div>
-    <div class="frow"><div class="fg"><label class="flbl">Valor (R$)</label><input class="finp" id="qa-val" type="number" placeholder="0,00" step="0.01" min="0"></div><div class="fg"><label class="flbl">Data</label><input class="finp" id="qa-date" type="date"></div></div>
-    <div class="fg"><label class="flbl">Categoria</label><select class="fsel" id="qa-cat"></select></div>
-    <div class="m-foot"><button class="btn-cncl" onclick="closeM('mod-quick')">Cancelar</button><button class="btn-p" onclick="saveQuick()">Adicionar</button></div>
+    <div class="m-ttl">💸 Gasto Rápido</div>
+    <div class="fg">
+      <label class="flbl">Descrição</label>
+      <input class="finp" id="qa-desc" type="text" placeholder="Ex: Chiclete, Almoço, Uber…" autocomplete="off" autocorrect="off">
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Valor (R$)</label><input class="finp" id="qa-val" type="number" placeholder="0,00" step="0.01" min="0" inputmode="decimal"></div>
+      <div class="fg"><label class="flbl">Data</label><input class="finp" id="qa-date" type="date"></div>
+    </div>
+    <div class="fg">
+      <label class="flbl">Categoria</label>
+      <div id="qa-cat-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:2px"></div>
+      <input type="hidden" id="qa-cat" value="outros">
+    </div>
+    <div class="m-foot">
+      <button class="btn-cncl" onclick="closeM('mod-quick')">Cancelar</button>
+      <button class="btn-p" onclick="saveQuick()">＋ Adicionar</button>
+    </div>
   </div>
 </div>
 <div class="ovl" id="mod-bill" onclick="ovC(event,'mod-bill')">
@@ -610,11 +636,57 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
   <div class="modal">
     <div class="m-ttl" id="card-ttl">Novo Cartão</div>
     <input type="hidden" id="card-eid">
-    <div class="fg"><label class="flbl">Nome do Cartão</label><input class="finp" id="card-name" type="text" placeholder="Ex: Nubank, Itaú…"></div>
-    <div class="frow"><div class="fg"><label class="flbl">Últimos 4 dígitos</label><input class="finp" id="card-num" type="text" placeholder="0000" maxlength="4"></div><div class="fg"><label class="flbl">Limite (R$)</label><input class="finp" id="card-limit" type="number" placeholder="5000" step="0.01" min="0"></div></div>
-    <div class="frow"><div class="fg"><label class="flbl">Dia Vencimento</label><input class="finp" id="card-due" type="number" placeholder="10" min="1" max="31"></div><div class="fg"><label class="flbl">Dia Fechamento</label><input class="finp" id="card-close" type="number" placeholder="3" min="1" max="31"></div></div>
+
+    <!-- Preview do cartão em tempo real -->
+    <div id="card-preview" style="border-radius:14px;padding:14px 16px;margin-bottom:16px;min-height:100px;display:flex;flex-direction:column;justify-content:space-between;transition:background .3s">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="width:22px;height:16px;background:rgba(255,255,255,.25);border-radius:3px"></div>
+        <span id="cp-brand" style="font-size:9px;font-weight:800;color:rgba(255,255,255,.6);letter-spacing:.1em">CRÉDITO</span>
+      </div>
+      <div>
+        <div id="cp-num" style="font-size:11px;letter-spacing:.15em;color:rgba(255,255,255,.6);margin-bottom:4px;font-family:var(--mono)">•••• •••• •••• ????</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <span id="cp-name" style="font-size:13px;font-weight:700;color:#fff">Novo Cartão</span>
+          <div style="text-align:right">
+            <div style="font-size:8px;color:rgba(255,255,255,.5);text-transform:uppercase">Limite</div>
+            <div id="cp-limit" style="font-size:11px;font-weight:700;color:#fff;font-family:var(--mono)">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fg"><label class="flbl">Nome do Cartão</label>
+      <input class="finp" id="card-name" type="text" placeholder="Ex: Nubank, Itaú, Inter…"
+        oninput="document.getElementById('cp-name').textContent=this.value||'Novo Cartão'">
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Últimos 4 dígitos</label>
+        <input class="finp" id="card-num" type="text" placeholder="0000" maxlength="4" inputmode="numeric"
+          oninput="document.getElementById('cp-num').textContent='•••• •••• •••• '+(this.value||'????')">
+      </div>
+      <div class="fg"><label class="flbl">Limite (R$)</label>
+        <input class="finp" id="card-limit" type="number" placeholder="5000" step="0.01" min="0" inputmode="decimal"
+          oninput="document.getElementById('cp-limit').textContent=this.value?'R$ '+parseFloat(this.value).toLocaleString('pt-BR',{minimumFractionDigits:0}):'—'">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg">
+        <label class="flbl">Dia Vencimento</label>
+        <input class="finp" id="card-due" type="number" placeholder="10" min="1" max="31" inputmode="numeric">
+        <div style="font-size:10px;color:var(--tx3);margin-top:3px">Dia que a fatura vence</div>
+      </div>
+      <div class="fg">
+        <label class="flbl">Dia Fechamento</label>
+        <input class="finp" id="card-close" type="number" placeholder="3" min="1" max="31" inputmode="numeric">
+        <div style="font-size:10px;color:var(--tx3);margin-top:3px">Dia que a fatura fecha</div>
+      </div>
+    </div>
     <div class="fg"><label class="flbl">Tema Visual</label><div class="gswatches" id="card-grads"></div></div>
-    <div class="m-foot"><button class="btn-cncl" onclick="closeM('mod-card')">Cancelar</button><button class="btn-p" onclick="saveCard()">Salvar</button></div>
+    <div class="m-foot">
+      <button class="btn-cncl" id="card-del-btn" style="display:none;color:var(--rd)" onclick="delCardFromModal()">Excluir</button>
+      <button class="btn-cncl" onclick="closeM('mod-card')">Cancelar</button>
+      <button class="btn-p" onclick="saveCard()">Salvar</button>
+    </div>
   </div>
 </div>
 <div class="ovl" id="mod-pur" onclick="ovC(event,'mod-pur')">
@@ -1238,9 +1310,18 @@ function renderCardsPage(){
     const inv=getCardMonthTotal(c.id,cM,cY);
     const used=getCardUsedLimit(c.id);
     const avail=Math.max(0,(c.limit||0)-used);
-    return`<div class="cc-visual ${selCardId===c.id?'sel-card':''}" style="background:${CGRADS[c.grad||0]};box-shadow:0 8px 24px rgba(0,0,0,.22)" onclick="selCard('${c.id}')">
-      <div><div class="cc-chip"></div><div class="cc-num">•••• •••• •••• ${c.lastFour||'????'}</div><div class="cc-name-row"><span class="cc-holder">${c.name}</span><span class="cc-brand">CRÉDITO</span></div></div>
-      <div class="cc-footer"><div class="cc-fi"><label>Fatura ${MONTHS[cM].substring(0,3)}</label><span>${fmt(inv)}</span></div><div class="cc-fi" style="text-align:right"><label>Disponível</label><span>${fmt(avail)}</span></div><div class="cc-fi" style="text-align:right"><label>Fecha dia</label><span>${c.closeDay||'—'}</span></div></div>
+    return`<div style="position:relative">
+      <div class="cc-visual ${selCardId===c.id?'sel-card':''}" style="background:${CGRADS[c.grad||0]};box-shadow:0 8px 24px rgba(0,0,0,.22)" onclick="selCard('${c.id}')">
+        <div><div class="cc-chip"></div><div class="cc-num">•••• •••• •••• ${c.lastFour||'????'}</div><div class="cc-name-row"><span class="cc-holder">${c.name}</span><span class="cc-brand">CRÉDITO</span></div></div>
+        <div class="cc-footer">
+          <div class="cc-fi"><label>Fatura ${MONTHS[cM].substring(0,3)}</label><span>${fmt(inv)}</span></div>
+          <div class="cc-fi" style="text-align:center"><label>Vence dia</label><span>${c.dueDay||'—'}</span></div>
+          <div class="cc-fi" style="text-align:right"><label>Disponível</label><span>${fmt(avail)}</span></div>
+        </div>
+      </div>
+      <button onclick="event.stopPropagation();openCardModal('${c.id}')"
+        style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);z-index:2"
+        title="Editar cartão">✏️</button>
     </div>`;
   }).join('')+`<button class="cc-add-btn" onclick="openCardModal()"><span style="font-size:26px">＋</span><span style="font-size:12px;font-weight:600">Novo Cartão</span></button>`;
   const iw=document.getElementById('invoice-wrap');
@@ -1329,17 +1410,40 @@ function purRowH(p,isFuture){
 }
 function openCardModal(id=null){
   const card=id?LC().find(c=>c.id===id):null;
-  document.getElementById('card-ttl').textContent=card?'Editar Cartão':'Novo Cartão';
+  document.getElementById('card-ttl').textContent=card?'✏️ Editar Cartão':'💳 Novo Cartão';
   document.getElementById('card-eid').value=id||'';
   document.getElementById('card-name').value=card?.name||'';
   document.getElementById('card-num').value=card?.lastFour||'';
   document.getElementById('card-limit').value=card?.limit||'';
   document.getElementById('card-due').value=card?.dueDay||'';
   document.getElementById('card-close').value=card?.closeDay||'';
-  pickedGrad=card?.grad||0;buildGrads();openM('mod-card');setTimeout(()=>document.getElementById('card-name').focus(),360);
+  // Botão excluir só no modo edição
+  const delBtn=document.getElementById('card-del-btn');
+  if(delBtn) delBtn.style.display=id?'block':'none';
+  // Atualizar preview
+  pickedGrad=card?.grad||0;
+  updateCardPreview(card);
+  buildGrads();
+  openM('mod-card');
+  setTimeout(()=>document.getElementById('card-name').focus(),360);
+}
+
+function updateCardPreview(card){
+  const grad=window.CGRADS?CGRADS[pickedGrad||0]:'linear-gradient(135deg,#1a1a2e,#16213e)';
+  const prev=document.getElementById('card-preview');
+  if(prev) prev.style.background=grad;
+  document.getElementById('cp-name').textContent=card?.name||document.getElementById('card-name')?.value||'Novo Cartão';
+  document.getElementById('cp-num').textContent='•••• •••• •••• '+(card?.lastFour||document.getElementById('card-num')?.value||'????');
+  const lim=card?.limit||parseFloat(document.getElementById('card-limit')?.value)||0;
+  document.getElementById('cp-limit').textContent=lim?'R$ '+lim.toLocaleString('pt-BR',{minimumFractionDigits:0}):'—';
 }
 function buildGrads(){document.getElementById('card-grads').innerHTML=CGRADS.map((g,i)=>`<div class="gsw ${i===pickedGrad?'sel':''}" style="background:${g}" onclick="pickGrad(${i})"></div>`).join('');}
-function pickGrad(i){pickedGrad=i;document.querySelectorAll('#card-grads .gsw').forEach((el,idx)=>el.classList.toggle('sel',idx===i));}
+function pickGrad(i){
+  pickedGrad=i;
+  document.querySelectorAll('#card-grads .gsw').forEach((el,idx)=>el.classList.toggle('sel',idx===i));
+  const prev=document.getElementById('card-preview');
+  if(prev) prev.style.background=CGRADS[i];
+}
 function saveCard(){
   const name=document.getElementById('card-name').value.trim();
   const lastFour=document.getElementById('card-num').value.trim();
@@ -1352,6 +1456,19 @@ function saveCard(){
   else cards.push({id:'c'+Date.now(),name,lastFour,limit,dueDay,closeDay,grad:pickedGrad});
   SC(cards);closeM('mod-card');renderCardsPage();renderDashboard();toast('✅ Cartão salvo!');
 }
+function delCardFromModal(){
+  const eid=document.getElementById('card-eid').value;
+  if(!eid) return;
+  customConfirm('Excluir este cartão e todas as compras parceladas?',()=>{
+    SC(LC().filter(cd=>cd.id!==eid));
+    SPALL(LPALL().filter(p=>p.cardId!==eid));
+    if(selCardId===eid) selCardId=null;
+    closeM('mod-card');
+    renderCardsPage();renderDashboard();
+    toast('🗑 Cartão excluído');
+  });
+}
+
 function delSelCard(){if(!selCardId)return;customConfirm('Excluir cartão e todas as compras parceladas?',()=>{SC(LC().filter(c=>c.id!==selCardId));SPALL(LPALL().filter(p=>p.cardId!==selCardId));selCardId=null;renderCardsPage();renderDashboard();toast('🗑 Cartão excluído');});}
 function openPurModal(){
   if(!selCardId)return;
@@ -1386,20 +1503,65 @@ function savePurchase(){
 function delPur(pid,cardId){customConfirm('Excluir esta compra de todas as faturas?',()=>{SPALL(LPALL().filter(p=>p.id!==pid));const card=LC().find(c=>c.id===cardId);if(card)renderInv(card);renderCardsPage();renderDashboard();toast('🗑 Compra removida');});}
 
 // ── TRANSACTIONS ──────────────────────────────
+// Categorias de gasto rápido
+const QUICK_CATS=[
+  {id:'alimentacao', icon:'🍔', label:'Alimentação'},
+  {id:'mercado',     icon:'🛒', label:'Mercado'},
+  {id:'transporte',  icon:'🚗', label:'Transporte'},
+  {id:'saude',       icon:'💊', label:'Saúde'},
+  {id:'lazer',       icon:'🎮', label:'Lazer'},
+  {id:'vestuario',   icon:'👕', label:'Vestuário'},
+  {id:'casa',        icon:'🏠', label:'Casa'},
+  {id:'servicos',    icon:'📱', label:'Serviços'},
+  {id:'educacao',    icon:'📚', label:'Educação'},
+  {id:'pets',        icon:'🐾', label:'Pets'},
+  {id:'presentes',   icon:'🎁', label:'Presentes'},
+  {id:'outros',      icon:'🗂', label:'Outros'},
+];
+const QUICK_CAT_MAP=Object.fromEntries(QUICK_CATS.map(c=>([c.id,c])));
+
+function buildCatGrid(selected='outros'){
+  const grid=document.getElementById('qa-cat-grid');
+  if(!grid) return;
+  grid.innerHTML=QUICK_CATS.map(cat=>`
+    <button type="button" class="cat-btn ${cat.id===selected?'active':''}"
+      onclick="selectCat('${cat.id}')">
+      <span>${cat.icon}</span>
+      <span>${cat.label}</span>
+    </button>`).join('');
+}
+
+function selectCat(id){
+  document.getElementById('qa-cat').value=id;
+  document.querySelectorAll('#qa-cat-grid .cat-btn').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('onclick').includes("'"+id+"'"));
+  });
+}
+
 function openQuick(){
-  const bills=LB();document.getElementById('qa-cat').innerHTML=bills.map(b=>`<option value="${b.id}">${b.icon} ${b.name}</option>`).join('');
   document.getElementById('qa-date').value=new Date().toISOString().split('T')[0];
-  document.getElementById('qa-desc').value='';document.getElementById('qa-val').value='';
-  openM('mod-quick');setTimeout(()=>document.getElementById('qa-desc').focus(),360);
+  document.getElementById('qa-desc').value='';
+  document.getElementById('qa-val').value='';
+  document.getElementById('qa-cat').value='outros';
+  buildCatGrid('outros');
+  openM('mod-quick');
+  setTimeout(()=>document.getElementById('qa-desc').focus(),360);
 }
 function saveQuick(){
-  const desc=document.getElementById('qa-desc').value.trim();const amount=parseFloat(document.getElementById('qa-val').value);
-  const date=document.getElementById('qa-date').value;const catId=document.getElementById('qa-cat').value;
-  if(!desc||!amount||!date)return;
-  const txs=LT();txs.push({id:'t'+Date.now(),desc,amount,date,catId});ST(txs);
-  closeM('mod-quick');renderDashboard();updateSidebar();
-  const cur=document.querySelector('.page.active')?.id?.replace('page-','');if(cur==='transactions')renderTxPage();
-  toast('✅ Gasto adicionado!');
+  const desc=document.getElementById('qa-desc').value.trim();
+  const amount=parseFloat(document.getElementById('qa-val').value);
+  const date=document.getElementById('qa-date').value;
+  const cat=document.getElementById('qa-cat').value||'outros';
+  if(!desc||!amount){toast('⚠️ Preencha descrição e valor');return;}
+  if(!date)return;
+  const txs=LT();
+  txs.push({id:'t'+Date.now(),desc,amount,date,cat});
+  ST(txs);
+  closeM('mod-quick');
+  renderDashboard();updateSidebar();
+  const cur=document.querySelector('.page.active')?.id?.replace('page-','');
+  if(cur==='transactions')renderTxPage();
+  toast('✅ '+fmt(amount)+' em '+(QUICK_CAT_MAP[cat]?.label||'Outros'));
 }
 function renderTxPage(){
   const bills=LB();const f=document.getElementById('tx-flt');
@@ -1408,8 +1570,14 @@ function renderTxPage(){
   if(fv)txs=txs.filter(t=>t.catId===fv);
   const el=document.getElementById('tx-list');
   if(!txs.length){if(el)el.innerHTML=emptyH('💸','Sem transações','Adicione com o botão acima');return;}
+  // Resolver categoria (suporta formato antigo catId e novo cat)
+  function resolveCat(t){
+    if(t.cat && QUICK_CAT_MAP[t.cat]) return {icon:QUICK_CAT_MAP[t.cat].icon,name:QUICK_CAT_MAP[t.cat].label,color:'#2563eb'};
+    if(t.catId){const b=LB().find(b=>b.id===t.catId);if(b)return {icon:b.icon,name:b.name,color:b.color};}
+    return {icon:'🗂',name:'Outros',color:'#8e8e93'};
+  }
   if(el)el.innerHTML='<div class="tx-wrap">'+txs.map(t=>{
-    const cat=bills.find(b=>b.id===t.catId)||{icon:'🗂',name:'Outros',color:'#8e8e93'};
+    const cat=resolveCat(t);
     const d=new Date(t.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
     return`<div class="tx-item"><div class="tx-ico" style="background:${cat.color}18">${cat.icon}</div><div class="tx-info"><div class="tx-name">${t.desc}</div><div class="tx-cat">${cat.name}</div></div><div class="tx-dt">${d}</div><div class="tx-amt">${fmt(t.amount)}</div><button class="tx-del" onclick="delTx('${t.id}')">✕</button></div>`;
   }).join('')+'</div>';
