@@ -8,12 +8,9 @@
 <meta name="apple-mobile-web-app-title" content="Finanças">
 <title>Finanças Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{overflow-x:hidden;max-width:100vw}
-body{overflow-x:hidden;max-width:100vw}
 :root{
   --bg:#f0f0f5;--sf:#ffffff;--sf2:#f5f5fa;--sf3:#e8e8f0;
   --tx:#18181b;--tx2:#52525b;--tx3:#a1a1aa;
@@ -291,179 +288,37 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 
 /* ── RESPONSIVE (mobile) ──────────────────── */
 @media(max-width:768px){
-  /* Layout base: coluna, sem overflow horizontal */
-  body{
-    flex-direction:column;
-    overflow-x:hidden;
-    overflow-y:auto;
-    height:100dvh;
-    max-width:100vw;
-  }
+  body{flex-direction:column;overflow:auto;height:auto;min-height:100dvh}
   .sb{display:none}
-  /* Main ocupa toda a tela em coluna */
-  .main{
-    display:flex;
-    flex-direction:column;
-    height:100dvh;
-    width:100vw;
-    max-width:100vw;
-    overflow:hidden;
-  }
-  /* Topbar compacto */
-  .topbar{
-    position:sticky;
-    top:0;
-    z-index:50;
-    padding:8px 14px;
-    flex-shrink:0;
-    height:auto;
-  }
+  .main{height:auto;overflow:visible}
+  .topbar{position:sticky;top:0;z-index:50;padding:0 16px}
   .tb-title{font-size:15px}
-  .mp-lbl{min-width:80px;font-size:10px}
-  .tb-r .btn-g{display:none}
-  .tb-r .btn-p{font-size:12px;padding:6px 10px}
-  /* Scroll principal — sem overflow-x */
-  .scroll{
-    flex:1;
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding:12px 14px 90px;
-    -webkit-overflow-scrolling:touch;
-    width:100%;
-    max-width:100vw;
-    box-sizing:border-box;
-  }
-  /* Páginas sem overflow */
-  .page{
-    width:100%;
-    max-width:100%;
-    overflow-x:hidden;
-  }
-  /* Summary grid 2x2 */
-  .sum-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-  .sc{padding:12px 13px;border-radius:var(--r12)}
-  .sc-ico{width:28px;height:28px;font-size:14px;margin-bottom:6px}
-  .sc-val{font-size:16px}
-  .sc-sub{font-size:10px}
-  /* Layout coluna no dashboard */
-  .tcol{grid-template-columns:1fr;gap:10px}
-  /* Cartões 100% largura */
-  .cards-row{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-  .cc-visual{width:100%;max-width:100%;height:auto;min-height:130px}
+  .mp-lbl{min-width:90px;font-size:11px}
+  .scroll{padding:14px 14px 80px;overflow:visible}
+  .sum-grid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+  .sc{padding:13px 14px}
+  .sc-val{font-size:18px}
+  .tcol{grid-template-columns:1fr;gap:12px}
+  .cards-row{gap:10px}
+  .cc-visual{width:100%;max-width:100%}
   .cc-add-btn{width:100%}
-  /* Invoice stats em 3 colunas compactas */
   .inv-stats{grid-template-columns:repeat(3,1fr)}
-  .inv-stat{padding:9px 6px}
-  .inv-stat span{font-size:12px}
-  .inv-stat label{font-size:8px}
-  /* Fatura tabs compactos */
-  .inv-tabs{margin:10px 12px}
-  .inv-tab{font-size:10px;padding:6px 3px}
-  /* Search na fatura */
-  .inv-search{padding:0 12px 10px}
-  .inv-search input{font-size:13px}
-  /* Compras na fatura */
-  .inv-pur{padding:9px 12px}
-  /* Transações */
-  .tx-wrap{border-radius:var(--r12)}
-  .tx-item{padding:10px 12px}
-  /* Settings */
+  .inv-stat span{font-size:13px}
   .set-wrap{max-width:100%}
-  .set-crd{padding:14px 15px}
-  /* Seção headers */
-  .sec-hd{flex-wrap:wrap;gap:6px}
-  .sec-hd>div{flex-wrap:wrap;gap:6px}
-  /* Bills */
-  .bills-wrap{border-radius:var(--r12)}
-  .bi{padding:10px 12px}
-  .bi-acts{opacity:1 !important} /* sempre visível no mobile */
-  /* Modais sobem do fundo */
-  .modal{
-    border-radius:22px 22px 0 0;
-    position:fixed;
-    bottom:0;left:0;right:0;
-    width:100%;max-width:100%;
-    margin:0;
-    max-height:92dvh;
-    padding:16px 16px 32px;
-  }
+  .modal{border-radius:22px 22px 0 0;position:fixed;bottom:0;left:0;right:0;width:100%;max-width:100%;margin:0;max-height:92vh}
   .ovl{align-items:flex-end}
-  /* Formulários */
-  .finp,.fsel{font-size:16px !important} /* evita zoom no iOS */
-  /* Bottom nav */
-  .bot-nav{
-    display:flex;
-    position:fixed;
-    bottom:0;left:0;right:0;
-    background:var(--sf);
-    border-top:.5px solid var(--bd2);
-    z-index:100;
-    padding-bottom:env(safe-area-inset-bottom,10px);
-    padding-top:4px;
-  }
-  .bn{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:2px;
-    padding:4px 2px;
-    border:none;
-    background:none;
-    cursor:pointer;
-    font-family:var(--font);
-    min-width:0;
-  }
-  .bn-ico{font-size:19px;line-height:1.2}
-  .bn-lbl{font-size:8.5px;font-weight:600;color:var(--tx3);white-space:nowrap}
+  /* Bottom nav for mobile */
+  .bot-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--sf);border-top:.5px solid var(--bd2);z-index:100;padding-bottom:env(safe-area-inset-bottom,8px)}
+  .bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px;border:none;background:none;cursor:pointer;font-family:var(--font)}
+  .bn-ico{font-size:20px;line-height:1}
+  .bn-lbl{font-size:9px;font-weight:600;color:var(--tx3)}
   .bn.active .bn-lbl{color:var(--bl)}
-  .bn.active .bn-ico{transform:scale(1.1)}
-  /* FAB */
-  .fab{
-    position:fixed;
-    bottom:70px;
-    right:14px;
-    width:46px;height:46px;
-    background:var(--bl);
-    border-radius:50%;
-    border:none;
-    cursor:pointer;
-    font-size:22px;
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    box-shadow:0 4px 14px rgba(37,99,235,.35);
-    z-index:90;
-  }
-  /* PIN box mobile */
-  .pin-box{padding:28px 20px;width:100%;max-width:360px}
-  .pin-btn{height:56px;font-size:20px}
-  /* Cards row mobile: sem scroll horizontal */
-  .cards-row{overflow-x:hidden}
-  /* Progress cards */
-  .pcrd{padding:13px 14px}
-  /* Header de contas com wrap */
-  #page-bills .sec-hd{
-    flex-direction:column;
-    align-items:flex-start;
-    gap:8px;
-  }
-  #page-bills .sec-hd>div{width:100%}
-  #page-bills .sec-hd>div button{flex:1}
-  /* Análise */
-  #analysis-content>div{border-radius:var(--r12) !important}
-  /* QR modal no mobile */
-  }
+  .tb-r .btn-g{display:none}
+  .fab{position:fixed;bottom:68px;right:16px;width:48px;height:48px;background:var(--bl);border-radius:50%;border:none;cursor:pointer;font-size:22px;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(37,99,235,.35);z-index:90}
+}
 @media(min-width:769px){
   .bot-nav{display:none}
   .fab{display:none}
-  /* Input padrão no desktop — sem forçar 16px */
-  .finp,.fsel{font-size:14px}
 }
 
 @media(max-width:768px){
@@ -496,65 +351,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 .lock-btn:hover{background:var(--sf3);color:var(--tx)}
 .pin-setup-step{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--bl);margin-bottom:-16px}
 
-
-
-@keyframes scanLine{0%{top:17.5%}50%{top:82.5%}100%{top:17.5%}}
-.qr-result-lbl{color:var(--tx2);font-weight:500}
-.qr-result-val{font-weight:700;font-family:var(--mono);text-align:right;max-width:60%;word-break:break-word}
-
-
-@media(max-width:768px){
-  /* Prevenir overflow horizontal em qualquer elemento */
-  .inv-wrap,.bills-wrap,.tx-wrap,.set-crd,.pcrd,.sc,.sal-crd{
-    max-width:100%;
-    overflow-x:hidden;
-  }
-  /* Tabela de análise */
-  #analysis-content{max-width:100%;overflow-x:hidden}
-  /* Fatura do cartão */
-  .inv-top{padding:14px 14px 0}
-  .lim-bar{padding:11px 14px}
-  .due-banner{margin:10px 14px}
-  /* Texto longo não vaza */
-  .bi-name,.tx-name,.ip-name,.inv-card-name{
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    max-width:150px;
-  }
-  /* Botões de ação no header de bills */
-  .sec-hd .btn-g,.sec-hd .btn-p{font-size:12px;padding:6px 10px}
-}
-
-@media(max-width:768px){
-  /* Topbar row responsivo */
-  .tb-l{gap:6px;min-width:0;flex:1}
-  .tb-title{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}
-  .mpill{flex-shrink:0}
-  .mp-lbl{min-width:75px;font-size:10px}
-  .mpb{width:22px;height:22px;font-size:12px}
-  /* Botão de ação no topbar menor */
-  #tb-action{font-size:12px;padding:6px 10px;white-space:nowrap}
-  /* Lock button menor */
-  .lock-btn{width:28px;height:28px;font-size:13px}
-}
-
-@media(max-width:768px){
-  /* Transações: nome não corta */
-  .tx-name{font-size:13px;max-width:calc(100vw - 160px)}
-  .tx-cat{font-size:10px}
-  .tx-amt{font-size:13px}
-  .tx-dt{font-size:10px}
-  /* Bills: nome não corta */
-  .bi-name{font-size:13px;max-width:calc(100vw - 200px)}
-  .bi-note{font-size:10px}
-  .bi-amt{font-size:13px}
-  /* Cards de compra */
-  .ip-name{max-width:calc(100vw - 160px)}
-  /* Summary cards menores */
-  .sc-val{font-size:15px;letter-spacing:-.4px}
-  .sc-lbl{font-size:10px}
-}
 </style>
 </head>
 <body>
@@ -698,12 +494,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 
     <!-- TRANSACTIONS -->
     <div class="page" id="page-transactions">
-      <div style="margin-bottom:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span class="sec-ttl">Transações</span>
-          <button class="btn-p" onclick="openQuick()" style="padding:6px 12px;font-size:12px">＋ Adicionar</button>
+      <div class="sec-hd" style="margin-bottom:14px">
+        <span class="sec-ttl">Transações</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="fsel" id="tx-flt" style="width:180px;padding:7px 11px;font-size:12px;border-radius:9px" onchange="renderTxPage()"><option value="">Todas as contas</option></select>
+          <button class="btn-p" onclick="openQuick()">＋ Adicionar</button>
         </div>
-        <select class="fsel" id="tx-flt" style="width:100%;padding:8px 12px;font-size:13px;border-radius:10px" onchange="renderTxPage()"><option value="">Todas as categorias</option></select>
       </div>
       <div id="tx-list"></div>
     </div>
@@ -782,23 +578,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
     <div class="m-ttl">Adicionar Gasto</div>
     <div class="fg"><label class="flbl">Descrição</label><input class="finp" id="qa-desc" type="text" placeholder="Almoço, Gasolina…" autocomplete="off"></div>
     <div class="frow"><div class="fg"><label class="flbl">Valor (R$)</label><input class="finp" id="qa-val" type="number" placeholder="0,00" step="0.01" min="0"></div><div class="fg"><label class="flbl">Data</label><input class="finp" id="qa-date" type="date"></div></div>
-    <div class="fg"><label class="flbl">Categoria</label>
-      <select class="fsel" id="qa-cat">
-        <option value="alimentacao">🍔 Alimentação</option>
-        <option value="transporte">🚗 Transporte</option>
-        <option value="saude">💊 Saúde / Farmácia</option>
-        <option value="lazer">🎮 Lazer / Entretenimento</option>
-        <option value="vestuario">👕 Vestuário</option>
-        <option value="mercado">🛒 Mercado</option>
-        <option value="eletronicos">💻 Eletrônicos</option>
-        <option value="casa">🏠 Casa / Moradia</option>
-        <option value="servicos">📱 Serviços / Assinaturas</option>
-        <option value="educacao">📚 Educação</option>
-        <option value="pets">🐾 Pets</option>
-        <option value="presentes">🎁 Presentes</option>
-        <option value="outros">🗂 Outros</option>
-      </select>
-    </div>
+    <div class="fg"><label class="flbl">Categoria</label><select class="fsel" id="qa-cat"></select></div>
     <div class="m-foot"><button class="btn-cncl" onclick="closeM('mod-quick')">Cancelar</button><button class="btn-p" onclick="saveQuick()">Adicionar</button></div>
   </div>
 </div>
@@ -896,6 +676,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);-webkit-font-s
 
 
 <!-- MODAL COPIAR CONTAS -->
+<div class="ovl" id="mod-copy" onclick="ovC(event,'mod-copy')">
+  <div class="modal" style="max-width:380px">
+    <div class="m-ttl">📋 Copiar Contas de Outro Mês</div>
+    <p style="font-size:13px;color:var(--tx2);margin-bottom:16px;line-height:1.65">
+      Selecione o mês de origem. Só serão copiadas contas que ainda não existem no mês atual.
+    </p>
+    <div class="fg"><label class="flbl">Mês de Origem</label>
+      <select class="fsel" id="copy-month-sel"></select>
+    </div>
+    <div id="copy-preview" style="background:var(--sf2);border:.5px solid var(--bd2);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--tx2);margin-bottom:4px;min-height:36px;line-height:1.7"></div>
+    <div class="m-foot">
+      <button class="btn-cncl" onclick="closeM('mod-copy')">Cancelar</button>
+      <button class="btn-p" onclick="execCopy()">Copiar</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -1293,17 +1089,13 @@ function nav(page){
   const mb=document.getElementById('mnav-'+page);if(mb)mb.classList.add('active');
   document.getElementById('tb-title').textContent=PTITLES[page]||'';
   const ta=document.getElementById('tb-action');
-  const isMobile=window.innerWidth<=768;
-  if(page==='cards'){ta.textContent=isMobile?'＋ Cartão':'＋ Novo Cartão';ta.style.display='flex';}
-  else if(page==='settings'||page==='analysis'){ta.style.display='none';}
-  else if(page==='transactions'){ta.style.display='none';} // usa botão interno
-  else{ta.textContent=isMobile?'＋ Conta':'＋ Nova Conta';ta.style.display='flex';}
+  if(page==='cards'){ta.textContent='＋ Novo Cartão';ta.style.display='flex';}
+  else if(page==='settings'){ta.style.display='none';}
+  else{ta.textContent='＋ Nova Conta';ta.style.display='flex';}
   if(page==='bills'){renderBillsPage();updBillsMonthLbl();}
   if(page==='transactions')renderTxPage();
   if(page==='cards')renderCardsPage();
   if(page==='analysis')renderAnalysis();
-  // Mostrar botão QR só na aba de transações (desktop)
-
   if(page==='settings')document.getElementById('salary-inp').value=LSal()||'';
 }
 function topAction(){const p=document.querySelector('.page.active')?.id?.replace('page-','');if(p==='cards')openCardModal();else openBillModal();}
@@ -1595,67 +1387,29 @@ function delPur(pid,cardId){customConfirm('Excluir esta compra de todas as fatur
 
 // ── TRANSACTIONS ──────────────────────────────
 function openQuick(){
+  const bills=LB();document.getElementById('qa-cat').innerHTML=bills.map(b=>`<option value="${b.id}">${b.icon} ${b.name}</option>`).join('');
   document.getElementById('qa-date').value=new Date().toISOString().split('T')[0];
-  document.getElementById('qa-desc').value='';
-  document.getElementById('qa-val').value='';
-  document.getElementById('qa-cat').value='alimentacao';
+  document.getElementById('qa-desc').value='';document.getElementById('qa-val').value='';
   openM('mod-quick');setTimeout(()=>document.getElementById('qa-desc').focus(),360);
 }
 function saveQuick(){
-  const desc=document.getElementById('qa-desc').value.trim();
-  const amount=parseFloat(document.getElementById('qa-val').value);
-  const date=document.getElementById('qa-date').value;
-  const cat=document.getElementById('qa-cat').value;
+  const desc=document.getElementById('qa-desc').value.trim();const amount=parseFloat(document.getElementById('qa-val').value);
+  const date=document.getElementById('qa-date').value;const catId=document.getElementById('qa-cat').value;
   if(!desc||!amount||!date)return;
-  const txs=LT();
-  txs.push({id:'t'+Date.now(),desc,amount,date,cat});
-  ST(txs);
+  const txs=LT();txs.push({id:'t'+Date.now(),desc,amount,date,catId});ST(txs);
   closeM('mod-quick');renderDashboard();updateSidebar();
-  const cur=document.querySelector('.page.active')?.id?.replace('page-','');
-  if(cur==='transactions')renderTxPage();
-  toast('✅ Gasto de '+fmt(amount)+' adicionado!');
+  const cur=document.querySelector('.page.active')?.id?.replace('page-','');if(cur==='transactions')renderTxPage();
+  toast('✅ Gasto adicionado!');
 }
 function renderTxPage(){
-  let txs=LT().slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
-  // Mapa de categorias fixas
-  const CAT_MAP={
-    alimentacao:{icon:'🍔',name:'Alimentação',color:'#f59e0b'},
-    transporte:{icon:'🚗',name:'Transporte',color:'#0891b2'},
-    saude:{icon:'💊',name:'Saúde / Farmácia',color:'#16a34a'},
-    lazer:{icon:'🎮',name:'Lazer',color:'#7c3aed'},
-    vestuario:{icon:'👕',name:'Vestuário',color:'#ec4899'},
-    mercado:{icon:'🛒',name:'Mercado',color:'#16a34a'},
-    eletronicos:{icon:'💻',name:'Eletrônicos',color:'#2563eb'},
-    casa:{icon:'🏠',name:'Casa',color:'#d97706'},
-    servicos:{icon:'📱',name:'Serviços',color:'#0284c7'},
-    educacao:{icon:'📚',name:'Educação',color:'#7c3aed'},
-    pets:{icon:'🐾',name:'Pets',color:'#d97706'},
-    presentes:{icon:'🎁',name:'Presentes',color:'#ec4899'},
-    outros:{icon:'🗂',name:'Outros',color:'#8e8e93'},
-  };
-  // Compatibilidade: transações antigas usavam catId (id de conta)
-  function getTxCat(t){
-    if(t.cat && CAT_MAP[t.cat]) return CAT_MAP[t.cat];
-    if(t.catId){
-      const bill=LB().find(b=>b.id===t.catId);
-      if(bill) return {icon:bill.icon,name:bill.name,color:bill.color};
-    }
-    return CAT_MAP['outros'];
-  }
-  // Atualizar filtro com categorias usadas
-  const fv=document.getElementById('tx-flt')?.value||'';
-  const usedCats=[...new Set(txs.map(t=>t.cat||'outros'))];
-  const fEl=document.getElementById('tx-flt');
-  if(fEl){
-    const prev=fEl.value;
-    fEl.innerHTML='<option value="">Todas as categorias</option>'+
-      usedCats.map(k=>{const c=CAT_MAP[k]||CAT_MAP['outros'];return`<option value="${k}" ${k===prev?'selected':''}>${c.icon} ${c.name}</option>`;}).join('');
-  }
-  const filtered=fv?txs.filter(t=>(t.cat||'outros')===fv):txs;
+  const bills=LB();const f=document.getElementById('tx-flt');
+  if(f)f.innerHTML='<option value="">Todas as contas</option>'+bills.map(b=>`<option value="${b.id}">${b.icon} ${b.name}</option>`).join('');
+  const fv=f?f.value:'';let txs=LT().slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(fv)txs=txs.filter(t=>t.catId===fv);
   const el=document.getElementById('tx-list');
-  if(!filtered.length){if(el)el.innerHTML=emptyH('💸',fv?'Sem gastos nesta categoria':'Sem transações','Adicione com o botão ＋ acima');return;}
-  if(el)el.innerHTML='<div class="tx-wrap">'+filtered.map(t=>{
-    const cat=getTxCat(t);
+  if(!txs.length){if(el)el.innerHTML=emptyH('💸','Sem transações','Adicione com o botão acima');return;}
+  if(el)el.innerHTML='<div class="tx-wrap">'+txs.map(t=>{
+    const cat=bills.find(b=>b.id===t.catId)||{icon:'🗂',name:'Outros',color:'#8e8e93'};
     const d=new Date(t.date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
     return`<div class="tx-item"><div class="tx-ico" style="background:${cat.color}18">${cat.icon}</div><div class="tx-info"><div class="tx-name">${t.desc}</div><div class="tx-cat">${cat.name}</div></div><div class="tx-dt">${d}</div><div class="tx-amt">${fmt(t.amount)}</div><button class="tx-del" onclick="delTx('${t.id}')">✕</button></div>`;
   }).join('')+'</div>';
@@ -2176,19 +1930,6 @@ function renderAnalysis(){
       return rows.length ? `<div style="background:var(--sf);border:.5px solid var(--bd2);border-radius:var(--r16);padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh1)"><div style="font-size:13px;font-weight:700;margin-bottom:8px">💳 ${c.name} •••• ${c.lastFour||'????'}</div>${rows.join('')}</div>` : '';
     }).join('') : '<div style="text-align:center;padding:20px;color:var(--tx3);font-size:12px">Nenhum cartão cadastrado</div>'}
   `;
-}
-
-
-
-  const txs = LT();
-  txs.push({ id: 't' + Date.now(), desc, amount, date, catId });
-  ST(txs);
-  closeQR();
-  renderDashboard();
-  updateSidebar();
-  const cur = document.querySelector('.page.active')?.id?.replace('page-','');
-  if (cur === 'transactions') renderTxPage();
-  toast('✅ Gasto de ' + fmt(amount) + ' salvo!');
 }
 
 // ── CUSTOM CONFIRM ────────────────────────────
