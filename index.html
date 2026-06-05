@@ -113,6 +113,7 @@ DATA.cards=d.cards||[];
 DATA.purchases=d.purchases||[];
 DATA.salary=d.salary||0;
 DATA.paid=d.paid||{};
+DATA.paidCards=d.paidCards||{};
 DATA.tx=d.tx||{};
 if(DATA.bills.length && !Object.keys(DATA.month_bills).length){
 const now=new Date();
@@ -171,6 +172,7 @@ DATA.cards=cached.cards||DEFAULT_CARDS;
 DATA.purchases=cached.purchases||DEFAULT_PURCHASES;
 DATA.salary=cached.salary||DEFAULT_SALARY;
 DATA.paid=cached.paid||{};
+DATA.paidCards=cached.paidCards||{};
 DATA.tx=cached.tx||{};
 if(DATA.bills.length && !Object.keys(DATA.month_bills).length){
 const now=new Date();
@@ -222,6 +224,9 @@ persist();
 };
 const LP=()=>DATA.paid[`${cY}_${cM}`]||[];
 const SP=d=>{DATA.paid[`${cY}_${cM}`]=d;persist();};
+// Cartões pagos por mês: array de cardIds
+const LPC=()=>DATA.paidCards?.[`${cY}_${cM}`]||[];
+const SPC=d=>{if(!DATA.paidCards)DATA.paidCards={};DATA.paidCards[`${cY}_${cM}`]=d;persist();};
 const LT=()=>DATA.tx[`${cY}_${cM}`]||[];
 const ST=d=>{DATA.tx[`${cY}_${cM}`]=d;persist();};
 const LC=()=>DATA.cards||[];
@@ -363,7 +368,8 @@ function updateSidebar(){
 const sal=LSal(),bills=LB(),txs=LT();
 const bTotal=bills.reduce((s,b)=>s+b.amount,0);
 const txTotal=txs.reduce((s,t)=>s+t.amount,0);
-const cTotal=LC().reduce((s,c)=>s+getCardMonthTotal(c.id,cM,cY),0);
+const paidCards2=LPC();
+const cTotal=LC().reduce((s,c)=>s+(paidCards2.includes(c.id)?0:getCardMonthTotal(c.id,cM,cY)),0);
 const spent=bTotal+txTotal+cTotal,avail=sal-spent,p=pct(spent,sal);
 const setT=(id,v,col)=>{const el=document.getElementById(id);if(el){el.textContent=v;if(col)el.style.color=col;}};
 setT('ssl-val',sal?fmt(sal):'R$ —',avail<0?'var(--rd)':null);
@@ -378,12 +384,18 @@ const bills=LB(),paid=LP(),txs=LT(),sal=LSal(),cards=LC();
 const bTotal=bills.reduce((s,b)=>s+b.amount,0);
 const paidAmt=bills.filter(b=>paid.includes(b.id)).reduce((s,b)=>s+b.amount,0);
 const txTotal=txs.reduce((s,t)=>s+t.amount,0);
-const cTotal=cards.reduce((s,c)=>s+getCardMonthTotal(c.id,cM,cY),0);
+// Só desconta fatura do cartão se ainda não foi paga
+const paidCards=LPC();
+const cTotal=cards.reduce((s,c)=>s+(paidCards.includes(c.id)?0:getCardMonthTotal(c.id,cM,cY)),0);
 const free=sal-bTotal-txTotal-cTotal;
 const setT=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
 setT('ds-bills',fmt(bTotal));setT('ds-bills-sub',bills.length+' contas');
 setT('ds-paid',fmt(paidAmt));setT('ds-paid-sub',bills.filter(b=>paid.includes(b.id)).length+' pagas');
-setT('ds-cards',fmt(cTotal));setT('ds-cards-sub',cards.length+' cartão(ões)');
+setT('ds-cards',fmt(cTotal));
+const paidCount=paidCards.filter(id=>cards.some(cd=>cd.id===id)).length;
+setT('ds-cards-sub',paidCount>0?paidCount+' pago(s) / '+cards.length+' total':cards.length+' cartão(ões)');
+const dsCardsEl=document.getElementById('ds-cards');
+if(dsCardsEl)dsCardsEl.style.color=paidCount===cards.length&&cards.length>0?'var(--gn)':'var(--pu)';
 setT('ds-free',fmt(free));
 const fEl=document.getElementById('ds-free');if(fEl)fEl.style.color=free<0?'var(--rd)':'var(--gn)';
 const msal=document.getElementById('mob-sal-val');
@@ -473,6 +485,21 @@ SB(bills);closeM('mod-bill');renderDashboard();renderBillsPage();updateBadge();u
 toast(eid?'✅ Conta atualizada!':'✅ Conta adicionada em '+MONTHS[cM]+'!');
 }
 function deleteBill(id){customConfirm('Excluir esta conta permanentemente?',()=>{SB(LB().filter(b=>b.id!==id));SP(LP().filter(p=>p!==id));renderDashboard();renderBillsPage();updateBadge();updateSidebar();toast('🗑 Conta excluída');});}
+
+// ── PAGAMENTO DE FATURA DO CARTÃO ─────────────────────────────────────
+function toggleCardPaid(cardId, checked){
+  let paid=LPC();
+  if(checked){if(!paid.includes(cardId))paid.push(cardId);}
+  else paid=paid.filter(p=>p!==cardId);
+  SPC(paid);
+  renderCardsPage();
+  renderDashboard();
+  updateSidebar();
+  const card=LC().find(c=>c.id===cardId);
+  const inv=getCardMonthTotal(cardId,cM,cY);
+  toast(checked?'✅ Fatura de '+fmt(inv)+' marcada como paga!':'↩️ Fatura desmarcada');
+}
+
 function renderCardsPage(){
 const cards=LC();
 const cr=document.getElementById('cards-row');
@@ -480,9 +507,30 @@ if(cr)cr.innerHTML=cards.map(c=>{
 const inv=getCardMonthTotal(c.id,cM,cY);
 const used=getCardUsedLimit(c.id);
 const avail=Math.max(0,(c.limit||0)-used);
-return`<div class="cc-visual ${selCardId===c.id?'sel-card':''}" style="background:${CGRADS[c.grad||0]};box-shadow:0 8px 24px rgba(0,0,0,.22)" onclick="selCard('${c.id}')">
-<div><div class="cc-chip"></div><div class="cc-num">•••• •••• •••• ${c.lastFour||'????'}</div><div class="cc-name-row"><span class="cc-holder">${c.name}</span><span class="cc-brand">CRÉDITO</span></div></div>
-<div class="cc-footer"><div class="cc-fi"><label>Fatura ${MONTHS[cM].substring(0,3)}</label><span>${fmt(inv)}</span></div><div class="cc-fi" style="text-align:right"><label>Disponível</label><span>${fmt(avail)}</span></div><div class="cc-fi" style="text-align:right"><label>Fecha dia</label><span>${c.closeDay||'—'}</span></div></div>
+const isCardPaid=LPC().includes(c.id);
+return`<div style="position:relative;margin-bottom:4px">
+<div class="cc-visual ${selCardId===c.id?'sel-card':''}" style="background:${CGRADS[c.grad||0]};box-shadow:0 8px 24px rgba(0,0,0,.22);opacity:${isCardPaid?'.65':'1'};transition:opacity .3s" onclick="selCard('${c.id}')">
+<div><div class="cc-chip"></div><div class="cc-num">•••• •••• •••• ${c.lastFour||'????'}</div>
+<div class="cc-name-row">
+<span class="cc-holder">${c.name}</span>
+<span class="cc-brand">${isCardPaid?'<span style=\"background:rgba(52,199,89,.3);color:#30d158;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:800\">✓ PAGO</span>':'CRÉDITO'}</span>
+</div></div>
+<div class="cc-footer">
+<div class="cc-fi"><label>Fatura ${MONTHS[cM].substring(0,3)}</label><span style="${isCardPaid?'text-decoration:line-through;opacity:.5':''}">${fmt(inv)}</span></div>
+<div class="cc-fi" style="text-align:center"><label>Vence dia</label><span>${c.dueDay||'—'}</span></div>
+<div class="cc-fi" style="text-align:right"><label>Fecha dia</label><span>${c.closeDay||'—'}</span></div>
+</div>
+</div>
+<div onclick="event.stopPropagation()" style="position:absolute;bottom:12px;left:12px;z-index:3">
+<label style="display:flex;align-items:center;gap:7px;cursor:pointer;touch-action:manipulation">
+<input type="checkbox" ${isCardPaid?'checked':''} onchange="toggleCardPaid('${c.id}',this.checked)" style="opacity:0;position:absolute;width:0;height:0">
+<div style="width:22px;height:22px;border-radius:6px;border:2px solid ${isCardPaid?'#30d158':'rgba(255,255,255,.5)'};background:${isCardPaid?'#30d158':'rgba(0,0,0,.25)'};display:flex;align-items:center;justify-content:center;transition:all .22s;flex-shrink:0">
+${isCardPaid?'<svg width=\"11\" height=\"9\" viewBox=\"0 0 11 9\"><path d=\"M1 4.5L4 7.5L10 1\" stroke=\"white\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/></svg>':''}
+</div>
+<span style="font-size:10px;font-weight:700;color:${isCardPaid?'#30d158':'rgba(255,255,255,.75)'}">${isCardPaid?'Fatura paga':'Marcar fatura como paga'}</span>
+</label>
+</div>
+<button onclick="event.stopPropagation();openCardModal('${c.id}')" style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);z-index:2" title="Editar">✏️</button>
 </div>`;
 }).join('')+`<button class="cc-add-btn" onclick="openCardModal()"><span style="font-size:26px">＋</span><span style="font-size:12px;font-weight:600">Novo Cartão</span></button>`;
 const iw=document.getElementById('invoice-wrap');
